@@ -32,6 +32,10 @@ mute, or volume.
 See [the complete hardware, vero-board and KiCad PCB guide](docs/hardware/README.md)
 before working inside the player.
 
+The carrier can also live outside the CD player in the
+[3D-printed OLED/USB-C enclosure](hardware/enclosure/heltec-external-case/README.md),
+connected by a deliberately short screened four-core lead.
+
 ## Features
 
 - Native CD sample rate and word length; no resampling

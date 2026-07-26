@@ -32,6 +32,8 @@ not bundle a custom Heltec 3D model.
 - `../../../output/pdf/cdtosonos-heltec-carrier-1to1.pdf` - actual-size fit sheet.
 - `generate_kicad.py` - deterministic board and schematic generator.
 - `build.ps1` - regeneration, checking and export script.
+- `../../enclosure/heltec-external-case/` - printable external enclosure,
+  connector plate, wiring drawing and fit-check assembly.
 
 ## Verified CAD status
 

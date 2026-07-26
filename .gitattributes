@@ -1,0 +1,3 @@
+# Generated CAD exchange files are reproducible artifacts. Treat them as
+# binary to preserve their exporter-provided line endings and keep diffs useful.
+hardware/enclosure/heltec-external-case/output/*.step binary

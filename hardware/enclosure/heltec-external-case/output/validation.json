@@ -1,0 +1,108 @@
+{
+  "status": "pass",
+  "checks": {
+    "cdtosonos-case-base.stl": {
+      "watertight": true,
+      "faces": 8840,
+      "volume_mm3": 39061.01,
+      "bounds_mm": [
+        [
+          -0.0,
+          -0.0,
+          0.0
+        ],
+        [
+          108.0,
+          76.0,
+          24.0
+        ]
+      ]
+    },
+    "cdtosonos-case-lid.stl": {
+      "watertight": true,
+      "faces": 6668,
+      "volume_mm3": 19908.82,
+      "bounds_mm": [
+        [
+          -0.0,
+          0.0,
+          -0.0
+        ],
+        [
+          108.0,
+          76.0,
+          5.9
+        ]
+      ]
+    },
+    "cdtosonos-connector-plate-blank.stl": {
+      "watertight": true,
+      "faces": 1540,
+      "volume_mm3": 1863.0,
+      "bounds_mm": [
+        [
+          -0.0,
+          -0.0,
+          0.0
+        ],
+        [
+          36.0,
+          22.0,
+          2.4
+        ]
+      ]
+    },
+    "cdtosonos-connector-plate-pp2010.stl": {
+      "watertight": true,
+      "faces": 2048,
+      "volume_mm3": 1350.04,
+      "bounds_mm": [
+        [
+          -0.0,
+          -0.0,
+          0.0
+        ],
+        [
+          36.0,
+          22.0,
+          2.4
+        ]
+      ]
+    },
+    "cdtosonos-oled-window-insert.stl": {
+      "watertight": true,
+      "faces": 524,
+      "volume_mm3": 404.07,
+      "bounds_mm": [
+        [
+          -0.0,
+          -0.0,
+          0.0
+        ],
+        [
+          30.0,
+          18.0,
+          0.75
+        ]
+      ]
+    },
+    "cdtosonos-pp2010-test-coupon.stl": {
+      "watertight": true,
+      "faces": 1032,
+      "volume_mm3": 1101.18,
+      "bounds_mm": [
+        [
+          -0.0,
+          -0.0,
+          0.0
+        ],
+        [
+          26.0,
+          26.0,
+          2.4
+        ]
+      ]
+    }
+  },
+  "note": "Geometric validation only; physical fit remains unverified."
+}

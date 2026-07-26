@@ -10,6 +10,8 @@ before beginning.
 - [Suggested vero-board layout](vero-board-layout.svg)
 - [Integrated Heltec vero-board layout](vero-board-integrated-heltec.svg)
 - [Heltec carrier PCB reference layout](pcb-layout-heltec-carrier.svg)
+- [External 3D-printed enclosure](../../hardware/enclosure/heltec-external-case/README.md)
+- [External enclosure wiring](../../hardware/enclosure/heltec-external-case/external-enclosure-wiring.svg)
 - [Firmware signal map](../../firmware/heltec-v3/main/board.hpp)
 
 ## Parts
@@ -207,6 +209,13 @@ The current design is:
 - short BCLK/LRCLK/DATA routes with a filled bottom ground plane;
 - antenna and USB orientation markings; and
 - four M3 mounting holes.
+
+The carrier can now be mounted in a
+[parametric external 3D-printed enclosure](../../hardware/enclosure/heltec-external-case/README.md)
+instead of inside the NAD. The external design exposes the onboard OLED and
+Heltec USB-C socket and uses a removable four-pin connector plate. Its short
+screened signal lead has stricter limitations than the original internal
+wiring; read the enclosure cable section before drilling the NAD chassis.
 
 ![KiCad top-side render](../../hardware/pcb/heltec-carrier/previews/cdtosonos-heltec-carrier-top.png)
 

@@ -1,0 +1,44 @@
+{
+  "units": "mm",
+  "enclosure_external": [
+    108.0,
+    76.0,
+    26.4
+  ],
+  "carrier_pcb": [
+    92.0,
+    60.0,
+    1.6
+  ],
+  "base_bounds": {
+    "x": 108.002,
+    "y": 76.002,
+    "z": 24.002
+  },
+  "lid_print_bounds": {
+    "x": 108.002,
+    "y": 76.002,
+    "z": 5.902
+  },
+  "usb_opening": [
+    14.0,
+    9.5
+  ],
+  "oled_visible_opening": [
+    27.5,
+    15.5
+  ],
+  "oled_insert": [
+    30.0,
+    18.0,
+    0.75
+  ],
+  "connector_plate": [
+    36.0,
+    22.0,
+    2.4
+  ],
+  "pp2010_nominal_cutout": 16.5,
+  "heltec_nominal_top_clearance": 2.8,
+  "mechanical_status": "prototype - measure real hardware before final print"
+}

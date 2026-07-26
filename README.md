@@ -29,8 +29,8 @@ mute, or volume.
 - Stripboard/veroboard, headers, insulated hookup wire and heat-shrink
 - USB power for the Heltec during the validated build
 
-See [the complete hardware and vero-board guide](docs/hardware/README.md) before
-working inside the player.
+See [the complete hardware, vero-board and KiCad PCB guide](docs/hardware/README.md)
+before working inside the player.
 
 ## Features
 

@@ -1,0 +1,6 @@
+(sym_lib_table
+  (lib (name "Connector_Generic")(type "KiCad")(uri "${KICAD10_SYMBOL_DIR}/Connector_Generic.kicad_sym")(options "")(descr ""))
+  (lib (name "Device")(type "KiCad")(uri "${KICAD10_SYMBOL_DIR}/Device.kicad_sym")(options "")(descr ""))
+  (lib (name "Mechanical")(type "KiCad")(uri "${KICAD10_SYMBOL_DIR}/Mechanical.kicad_sym")(options "")(descr ""))
+  (lib (name "74xx")(type "KiCad")(uri "${KICAD10_SYMBOL_DIR}/74xx.kicad_sym")(options "")(descr ""))
+)

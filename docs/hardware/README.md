@@ -186,18 +186,29 @@ accessible and check the height of the socketed assembly against the NAD lid.
 
 ## Printed circuit board layout
 
-The PCB drawing turns the validated Heltec/74LVC245 circuit into a suggested
-two-layer carrier:
-
-- 92 × 60 mm, 1.6 mm FR-4;
-- socketed DIP-20 buffer and two socketed 1 × 18 Heltec headers;
-- keyed 1 × 4 NAD input connector;
-- short top-layer BCLK/LRCLK/DATA traces over a continuous bottom ground plane;
-- antenna and USB keep-outs;
-- four M3 mounting holes; and
-- ground stitching around the input, buffer and Heltec ground pins.
+The earlier SVG remains the placement brief:
 
 ![Heltec carrier PCB reference layout](pcb-layout-heltec-carrier.svg)
+
+Revision A has now been captured as an editable KiCad 10 project:
+
+- [KiCad project, reports and fabrication files](../../hardware/pcb/heltec-carrier/README.md)
+- [Editable schematic](../../hardware/pcb/heltec-carrier/cdtosonos-heltec-carrier.kicad_sch)
+- [Editable PCB](../../hardware/pcb/heltec-carrier/cdtosonos-heltec-carrier.kicad_pcb)
+- [Gerber and drill package](../../hardware/pcb/heltec-carrier/cdtosonos-heltec-carrier-gerbers.zip)
+- [Schematic PDF](../../output/pdf/cdtosonos-heltec-carrier-schematic.pdf)
+- [1:1 paper fit sheet](../../output/pdf/cdtosonos-heltec-carrier-1to1.pdf)
+
+The current design is:
+
+- 92 x 60 mm, two layers and 1.6 mm FR-4;
+- socketed DIP-20 buffer and two socketed 1 x 18 Heltec headers;
+- a plain 2.54 mm 1 x 4 NAD input header;
+- short BCLK/LRCLK/DATA routes with a filled bottom ground plane;
+- antenna and USB orientation markings; and
+- four M3 mounting holes.
+
+![KiCad top-side render](../../hardware/pcb/heltec-carrier/previews/cdtosonos-heltec-carrier-top.png)
 
 The NAD connector pinout is:
 
@@ -208,11 +219,12 @@ The NAD connector pinout is:
 | 3 | DATA / U302 pin 2 | Yellow |
 | 4 | DGND / U302 pin 7 | Black |
 
-This is a placement and routing reference, **not fabrication-ready Gerber
-data**. Before ordering boards it must be captured in KiCad or equivalent,
-assigned to the exact purchased socket and connector footprints, checked
-against a physical Heltec, and pass ERC, DRC, Gerber inspection and a 1:1 paper
-fit test. The first PCB revision should be treated as a prototype.
+KiCad 10.0.5 reports zero ERC violations, zero DRC violations, zero unconnected
+pads and zero schematic-parity issues. Gerbers and drill files are included,
+but revision A is still **mechanically unverified**. Before ordering, print the
+1:1 sheet at Actual size, measure its 92 x 60 mm outline, place the purchased
+Heltec, sockets and J1 connector over it, and test the paper outline inside the
+unplugged NAD. The first manufactured board must be treated as a prototype.
 
 The interior photograph below shows why the paper fit and lid/transport
 clearance checks matter. Keep the carrier away from the mains inlet,

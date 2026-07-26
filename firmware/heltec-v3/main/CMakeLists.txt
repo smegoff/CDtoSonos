@@ -1,0 +1,25 @@
+idf_component_register(
+    SRCS
+        "app_main.cpp"
+        "audio_pipeline.cpp"
+        "flac_encoder.cpp"
+        "lossless_server.cpp"
+        "oled_display.cpp"
+        "radio_guard.cpp"
+        "sonos.cpp"
+        "sonos_automation.cpp"
+        "web_server.cpp"
+        "wifi_manager.cpp"
+    INCLUDE_DIRS "."
+    REQUIRES
+        driver
+        esp_event
+        esp_driver_pcnt
+        esp_http_client
+        esp_http_server
+        esp_netif
+        esp_wifi
+        lwip
+        mdns
+        nvs_flash
+)

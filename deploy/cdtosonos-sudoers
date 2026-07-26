@@ -1,0 +1,1 @@
+cdtosonos ALL=(root) NOPASSWD: /usr/bin/systemctl restart cdtosonos, /usr/bin/systemctl restart icecast2, /usr/bin/systemctl reboot

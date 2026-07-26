@@ -1,0 +1,16 @@
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+build/
+dist/
+*.egg-info/
+data/
+config/local.json
+*.wav
+*.log
+.pio/
+firmware/heltec-v3/sdkconfig
+firmware/heltec-v3/sdkconfig.old
+firmware/heltec-v3/sdkconfig.*
+firmware/heltec-v3/managed_components/

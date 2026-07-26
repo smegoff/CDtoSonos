@@ -1,0 +1,22 @@
+[Unit]
+Description=CD to Sonos appliance
+After=network-online.target icecast2.service sound.target
+Wants=network-online.target icecast2.service
+
+[Service]
+Type=simple
+User=cdtosonos
+Group=audio
+Environment=CDTOSONOS_DATA=/var/lib/cdtosonos
+Environment=CDTOSONOS_CONFIG=/etc/cdtosonos/config.json
+ExecStart=/opt/cdtosonos/venv/bin/cdtosonos
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/cdtosonos /etc/cdtosonos
+
+[Install]
+WantedBy=multi-user.target

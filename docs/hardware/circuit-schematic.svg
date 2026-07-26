@@ -1,0 +1,91 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="850" viewBox="0 0 1400 850" role="img" aria-labelledby="title desc">
+  <title id="title">CDtoSonos NAD C541i to Heltec circuit schematic</title>
+  <desc id="desc">Three PCM signals from U302 pass through one kilohm resistors and a 74LVC245 buffer to Heltec GPIO 4, 5 and 6. Digital ground is common. The buffer is powered only from Heltec 3.3 volts.</desc>
+  <defs>
+    <style>
+      .bg{fill:#f6f1e8}.panel{fill:#fffaf0;stroke:#332d27;stroke-width:3}.chip{fill:#272727;stroke:#111;stroke-width:3}
+      .txt{font:24px Arial,sans-serif;fill:#29231e}.small{font:19px Arial,sans-serif;fill:#514941}.tiny{font:16px Arial,sans-serif;fill:#514941}
+      .title{font:bold 34px Arial,sans-serif;fill:#29231e}.label{font:bold 21px Arial,sans-serif;fill:#29231e}
+      .white{stroke:#f7f4e9}.yellow{stroke:#e6b800}.blue{stroke:#1477c9}.black{stroke:#252525}.green{stroke:#16804a}.red{stroke:#b8332a}
+      .wire{fill:none;stroke-width:8;stroke-linecap:round;stroke-linejoin:round}.outline{fill:none;stroke:#5f584f;stroke-width:12;stroke-linecap:round}
+      .thin{fill:none;stroke-width:5;stroke-linecap:round;stroke-linejoin:round}.pin{fill:#d6d1c8;stroke:#111;stroke-width:2}
+      .res{fill:#e7d1a3;stroke:#3b3025;stroke-width:3}.node{stroke:#fffaf0;stroke-width:3}.warn{fill:#fff0cf;stroke:#a56500;stroke-width:2}
+    </style>
+  </defs>
+  <rect class="bg" width="1400" height="850"/>
+  <text class="title" x="700" y="55" text-anchor="middle">NAD C541i PCM tap → 74LVC245 → Heltec V3</text>
+  <text class="small" x="700" y="88" text-anchor="middle">Validated lossless three-signal interface · top-view pin numbering</text>
+
+  <rect class="panel" x="35" y="135" width="300" height="570" rx="16"/>
+  <text class="label" x="185" y="175" text-anchor="middle">NAD C541i · U302</text>
+  <text class="small" x="185" y="205" text-anchor="middle">PCM1732U underside tap</text>
+  <circle cx="80" cy="280" r="12" fill="#f7f4e9" stroke="#5f584f" stroke-width="3"/><text class="txt" x="110" y="289">pin 1 · LRCIN</text>
+  <circle cx="80" cy="390" r="12" fill="#e6b800"/><text class="txt" x="110" y="399">pin 2 · DIN</text>
+  <circle cx="80" cy="500" r="12" fill="#1477c9"/><text class="txt" x="110" y="509">pin 3 · BCKIN</text>
+  <circle cx="80" cy="625" r="12" fill="#252525"/><text class="txt" x="110" y="634">pin 7 · DGND</text>
+  <text class="tiny" x="185" y="675" text-anchor="middle">No NAD power rail is connected</text>
+
+  <rect class="chip" x="610" y="135" width="300" height="570" rx="14"/>
+  <path d="M715 135a45 30 0 0 0 90 0" fill="#f6f1e8"/>
+  <text x="760" y="410" text-anchor="middle" transform="rotate(-90 760 410)" style="font:bold 30px Arial,sans-serif;fill:#f5efe5">SN74LVC245AN</text>
+  <text x="790" y="410" text-anchor="middle" transform="rotate(90 790 410)" style="font:17px Arial,sans-serif;fill:#d9d2c8">3.3 V · A → B</text>
+
+  <g class="tiny">
+    <rect class="pin" x="580" y="190" width="30" height="28"/><text x="570" y="211" text-anchor="end">1 DIR</text>
+    <rect class="pin" x="580" y="265" width="30" height="28"/><text x="570" y="286" text-anchor="end">2 A1</text>
+    <rect class="pin" x="580" y="340" width="30" height="28"/><text x="570" y="361" text-anchor="end">3 A2</text>
+    <rect class="pin" x="580" y="415" width="30" height="28"/><text x="570" y="436" text-anchor="end">4 A3</text>
+    <rect class="pin" x="580" y="490" width="30" height="28"/><text x="570" y="511" text-anchor="end">5–9 A4–A8</text>
+    <rect class="pin" x="580" y="625" width="30" height="28"/><text x="570" y="646" text-anchor="end">10 GND</text>
+    <rect class="pin" x="910" y="190" width="30" height="28"/><text x="950" y="211">20 VCC</text>
+    <rect class="pin" x="910" y="265" width="30" height="28"/><text x="950" y="286">19 /OE</text>
+    <rect class="pin" x="910" y="340" width="30" height="28"/><text x="950" y="361">18 B1</text>
+    <rect class="pin" x="910" y="415" width="30" height="28"/><text x="950" y="436">17 B2</text>
+    <rect class="pin" x="910" y="490" width="30" height="28"/><text x="950" y="511">16 B3</text>
+    <rect class="pin" x="910" y="625" width="30" height="28"/><text x="950" y="646">11–15 open</text>
+  </g>
+
+  <!-- NAD inputs and series resistors -->
+  <path class="outline" d="M335 280H405"/><path class="wire white" d="M335 280H405"/>
+  <rect class="res" x="405" y="258" width="95" height="44" rx="8"/><text class="small" x="452" y="287" text-anchor="middle">1 kΩ</text>
+  <path class="outline" d="M500 280H545V354H580"/><path class="wire white" d="M500 280H545V354H580"/>
+
+  <path class="outline" d="M335 390H405"/><path class="wire yellow" d="M335 390H405"/>
+  <rect class="res" x="405" y="368" width="95" height="44" rx="8"/><text class="small" x="452" y="397" text-anchor="middle">1 kΩ</text>
+  <path class="outline" d="M500 390H525V429H580"/><path class="wire yellow" d="M500 390H525V429H580"/>
+
+  <path class="outline" d="M335 500H405"/><path class="wire blue" d="M335 500H405"/>
+  <rect class="res" x="405" y="478" width="95" height="44" rx="8"/><text class="small" x="452" y="507" text-anchor="middle">1 kΩ</text>
+  <path class="outline" d="M500 500H515V279H580"/><path class="wire blue" d="M500 500H515V279H580"/>
+
+  <!-- Heltec -->
+  <rect class="panel" x="1070" y="135" width="295" height="570" rx="16"/>
+  <text class="label" x="1217" y="175" text-anchor="middle">Heltec WiFi LoRa 32 V3</text>
+  <text class="small" x="1217" y="205" text-anchor="middle">ESP32-S3 · USB powered</text>
+  <circle cx="1120" cy="280" r="12" fill="#1477c9"/><text class="txt" x="1150" y="289">GPIO 4 · BCLK</text>
+  <circle cx="1120" cy="390" r="12" fill="#f7f4e9" stroke="#5f584f" stroke-width="3"/><text class="txt" x="1150" y="399">GPIO 5 · LRCLK</text>
+  <circle cx="1120" cy="500" r="12" fill="#e6b800"/><text class="txt" x="1150" y="509">GPIO 6 · DATA</text>
+  <circle cx="1120" cy="585" r="12" fill="#16804a"/><text class="txt" x="1150" y="594">3V3</text>
+  <circle cx="1120" cy="640" r="12" fill="#252525"/><text class="txt" x="1150" y="649">GND</text>
+
+  <!-- Buffered outputs -->
+  <path class="outline" d="M940 354H1010V280H1070"/><path class="wire blue" d="M940 354H1010V280H1070"/>
+  <path class="outline" d="M940 429H1025V390H1070"/><path class="wire white" d="M940 429H1025V390H1070"/>
+  <path class="outline" d="M940 504H1070"/><path class="wire yellow" d="M940 504H1070"/>
+
+  <!-- Power and ground -->
+  <path class="thin green" d="M1070 585H1000V155H970V204H940"/>
+  <path class="thin green" d="M970 155H550V204H580"/>
+  <text class="small" x="760" y="152" text-anchor="middle">Heltec 3.3 V only</text>
+
+  <path class="thin black" d="M335 625H450V760H1000V640H1070"/>
+  <path class="thin black" d="M595 653V760M925 279H980V760M580 504H560V760"/>
+  <text class="small" x="720" y="790" text-anchor="middle">Common digital ground · A4–A8 grounded · /OE low</text>
+
+  <!-- decoupling -->
+  <path class="thin red" d="M970 204V238M955 238H985M955 248H985M970 248V279"/>
+  <text class="tiny" x="995" y="246">100 nF</text>
+
+  <rect class="warn" x="390" y="805" width="620" height="34" rx="8"/>
+  <text class="small" x="700" y="829" text-anchor="middle">Do not connect NAD D+5V, A+12V or any other NAD power rail</text>
+</svg>

@@ -17,7 +17,9 @@ namespace {
 constexpr char kTag[] = "audio";
 constexpr float kSilenceThresholdDbfs = -55.0F;
 constexpr float kPi = 3.14159265358979323846F;
-constexpr uint64_t kAnalysisIntervalBlocks = 16;
+// About 5.4 display updates per second at 44.1 kHz. This task remains
+// low-priority on the capture core, so I2S capture always preempts it.
+constexpr uint64_t kAnalysisIntervalBlocks = 8;
 constexpr uint32_t kClockLossTimeouts = 8;
 constexpr std::array<float, 16> kSpectrumFrequencies = {
     63.0F, 100.0F, 160.0F, 250.0F, 400.0F, 630.0F, 1000.0F, 1600.0F,

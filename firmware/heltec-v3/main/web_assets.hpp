@@ -13,31 +13,46 @@ inline constexpr char kIndex[] = R"CDTS(<!doctype html>
 <body>
   <header>
     <div>
-      <p class="eyebrow">NAD C541i · lossless network transport</p>
+      <p class="eyebrow">NAD C541i - lossless network transport</p>
       <h1>CD to Sonos</h1>
     </div>
     <div class="status-pills">
       <span id="radioState" class="pill safe">LoRa disabled</span>
-      <span id="clockState" class="pill">Waiting for I²S</span>
+      <span id="clockState" class="pill">Waiting for I2S</span>
     </div>
   </header>
 
   <main>
     <section class="meters panel">
       <div class="visual-heading">
-        <div><p class="eyebrow">Live audio</p><h2>Digital input monitor</h2></div>
-        <p id="format">44.1 kHz · 16-bit · stereo FLAC</p>
+        <div>
+          <p class="eyebrow">Live audio</p>
+          <h2>Digital input monitor</h2>
+        </div>
+        <div class="visual-tools">
+          <p id="format">44.1 kHz - 16-bit - stereo FLAC</p>
+          <div class="visual-toggle" role="group" aria-label="Audio visualizer">
+            <button id="showVu" type="button" data-visual="vu" aria-pressed="true">VU meters</button>
+            <button id="showSpectrum" class="secondary" type="button" data-visual="spectrum" aria-pressed="false">Spectrum</button>
+          </div>
+        </div>
       </div>
-      <canvas id="spectrum" width="1000" height="230" aria-label="Live audio spectrum"></canvas>
-      <div class="vu-pair">
-        <div class="vu"><canvas id="vuLeft" width="420" height="210"></canvas><span>L</span></div>
-        <div class="vu"><canvas id="vuRight" width="420" height="210"></canvas><span>R</span></div>
+      <div id="spectrumView" class="visual-view" hidden>
+        <canvas id="spectrum" width="1000" height="230" aria-label="Live audio spectrum"></canvas>
       </div>
+      <div id="vuView" class="visual-view">
+        <div class="vu-pair">
+          <div class="vu"><canvas id="vuLeft" width="420" height="210" aria-label="Left channel VU meter"></canvas><span>L</span></div>
+          <div class="vu"><canvas id="vuRight" width="420" height="210" aria-label="Right channel VU meter"></canvas><span>R</span></div>
+        </div>
+      </div>
+      <p class="visual-note">30 fps display smoothing runs in this browser; the lossless stream remains the device priority.</p>
     </section>
 
     <section class="grid">
       <article class="panel">
-        <p class="eyebrow">Lossless stream</p><h2>Playback</h2>
+        <p class="eyebrow">Lossless stream</p>
+        <h2>Playback</h2>
         <dl>
           <div><dt>Signal</dt><dd id="signal">Silent</dd></div>
           <div><dt>Clients</dt><dd id="clients">0</dd></div>
@@ -48,7 +63,8 @@ inline constexpr char kIndex[] = R"CDTS(<!doctype html>
       </article>
 
       <article class="panel">
-        <p class="eyebrow">Sonos</p><h2>Sonos playback</h2>
+        <p class="eyebrow">Sonos</p>
+        <h2>Sonos playback</h2>
         <label for="sonosPlayer">Group or room</label>
         <select id="sonosPlayer"><option value="">Select group or room</option></select>
         <div class="actions">
@@ -56,12 +72,13 @@ inline constexpr char kIndex[] = R"CDTS(<!doctype html>
           <button id="playSonos" type="button" disabled>Play</button>
           <button id="stopSonos" class="secondary" type="button" disabled>Stop</button>
         </div>
-        <p id="sonosAuto" class="help">Automatic playback is startingâ€¦</p>
+        <p id="sonosAuto" class="help">Automatic playback is starting...</p>
         <p id="sonosMessage" class="help">Choose a room or existing Sonos group. Bonding is never changed.</p>
       </article>
 
       <article class="panel">
-        <p class="eyebrow">Network</p><h2>Wi-Fi setup</h2>
+        <p class="eyebrow">Network</p>
+        <h2>Wi-Fi setup</h2>
         <form id="wifiForm">
           <label for="ssid">Network name</label>
           <input id="ssid" name="ssid" maxlength="32" required autocomplete="off">
@@ -71,28 +88,30 @@ inline constexpr char kIndex[] = R"CDTS(<!doctype html>
           <input id="password" name="password" type="password" maxlength="64" autocomplete="new-password">
           <button type="submit">Save and restart</button>
         </form>
-        <p id="networkState" class="help">Checking network…</p>
+        <p id="networkState" class="help">Checking network...</p>
       </article>
 
       <article class="panel">
-        <p class="eyebrow">Diagnostics</p><h2>System</h2>
+        <p class="eyebrow">Diagnostics</p>
+        <h2>System</h2>
         <dl>
-          <div><dt>IP address</dt><dd id="ip">—</dd></div>
-          <div><dt>Free heap</dt><dd id="heap">—</dd></div>
-          <div><dt>CPU load</dt><dd id="cpu">—</dd></div>
-          <div><dt>CPU cores</dt><dd id="cpuCores">—</dd></div>
-          <div><dt>Stream delivery</dt><dd id="delivery">—</dd></div>
-          <div><dt>Source LRCLK</dt><dd id="sourceRate">—</dd></div>
-          <div><dt>Captured</dt><dd id="captured">—</dd></div>
-          <div><dt>I²S timeouts</dt><dd id="timeouts">0</dd></div>
-          <div><dt>Capture stack free</dt><dd id="captureStack">—</dd></div>
-          <div><dt>Analysis stack free</dt><dd id="analysisStack">—</dd></div>
+          <div><dt>IP address</dt><dd id="ip">--</dd></div>
+          <div><dt>Free heap</dt><dd id="heap">--</dd></div>
+          <div><dt>CPU load</dt><dd id="cpu">--</dd></div>
+          <div><dt>CPU cores</dt><dd id="cpuCores">--</dd></div>
+          <div><dt>Stream delivery</dt><dd id="delivery">--</dd></div>
+          <div><dt>Source LRCLK</dt><dd id="sourceRate">--</dd></div>
+          <div><dt>Captured</dt><dd id="captured">--</dd></div>
+          <div><dt>I2S timeouts</dt><dd id="timeouts">0</dd></div>
+          <div><dt>Capture stack free</dt><dd id="captureStack">--</dd></div>
+          <div><dt>Analysis stack free</dt><dd id="analysisStack">--</dd></div>
           <div><dt>Analysis updates</dt><dd id="analysisRuns">0</dd></div>
-          <div><dt>Firmware</dt><dd id="version">—</dd></div>
+          <div><dt>Firmware</dt><dd id="version">--</dd></div>
         </dl>
       </article>
     </section>
   </main>
+
   <script src="/app.js"></script>
 </body>
 </html>
@@ -100,41 +119,72 @@ inline constexpr char kIndex[] = R"CDTS(<!doctype html>
 
 inline constexpr char kStyle[] = R"CDTS(:root {
   color-scheme: dark;
-  --bg: #151515; --panel: #20201f; --edge: #45433e;
-  --text: #f3eee3; --muted: #b9b0a2; --amber: #f2a52b;
-  --red: #df543f; --green: #68b886;
+  --bg: #151515;
+  --panel: #20201f;
+  --edge: #45433e;
+  --text: #f3eee3;
+  --muted: #b9b0a2;
+  --amber: #f2a52b;
+  --amber-soft: #8f591b;
+  --red: #df543f;
+  --green: #68b886;
 }
+
 * { box-sizing: border-box; }
 body {
   margin: 0;
-  background: repeating-linear-gradient(0deg, transparent 0 3px, #ffffff05 3px 4px), var(--bg);
+  background:
+    repeating-linear-gradient(0deg, transparent 0 3px, #ffffff05 3px 4px),
+    var(--bg);
   color: var(--text);
   font: 15px/1.45 system-ui, sans-serif;
 }
-header, main { width: min(1180px, calc(100% - 32px)); margin-inline: auto; }
-header { display: flex; justify-content: space-between; align-items: center; gap: 20px; padding: 28px 0 18px; }
+header, main {
+  width: min(1180px, calc(100% - 32px));
+  margin-inline: auto;
+}
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  padding: 28px 0 18px;
+}
 h1, h2, p { margin-top: 0; }
 h1 { margin-bottom: 0; font-size: clamp(30px, 5vw, 54px); font-weight: 500; letter-spacing: -.04em; }
 h2 { margin-bottom: 18px; font-weight: 500; }
 .eyebrow { margin-bottom: 4px; color: var(--amber); text-transform: uppercase; letter-spacing: .13em; font-size: 12px; }
 .status-pills, .actions { display: flex; gap: 8px; flex-wrap: wrap; }
-.pill { padding: 7px 11px; border: 1px solid var(--edge); border-radius: 999px; color: var(--muted); }
+.pill {
+  padding: 7px 11px;
+  border: 1px solid var(--edge);
+  border-radius: 999px;
+  color: var(--muted);
+}
 .pill.safe { border-color: var(--green); color: var(--green); }
 .pill.live { border-color: var(--amber); color: var(--amber); }
 .panel {
-  border: 1px solid var(--edge); border-radius: 10px;
+  border: 1px solid var(--edge);
+  border-radius: 10px;
   background: linear-gradient(145deg, #ffffff08, transparent), var(--panel);
-  padding: 22px; box-shadow: inset 0 1px #ffffff10, 0 18px 40px #0005;
+  padding: 22px;
+  box-shadow: inset 0 1px #ffffff10, 0 18px 40px #0005;
 }
 .meters { margin-bottom: 18px; }
 .visual-heading { display: flex; justify-content: space-between; gap: 20px; align-items: end; }
 .visual-heading h2 { margin-bottom: 0; }
-.visual-heading > p { color: var(--muted); }
+.visual-tools { display: flex; align-items: flex-end; gap: 14px; flex-wrap: wrap; justify-content: flex-end; }
+.visual-tools > p { color: var(--muted); margin-bottom: 8px; }
+.visual-toggle { display: flex; gap: 5px; padding: 4px; border: 1px solid var(--edge); border-radius: 8px; background: #171716; }
+.visual-toggle button { margin: 0; padding: 7px 11px; border-color: transparent; background: transparent; color: var(--muted); }
+.visual-toggle button[aria-pressed="true"] { background: var(--amber); color: #17110a; }
+.visual-view[hidden] { display: none !important; }
 #spectrum { width: 100%; height: 170px; display: block; margin: 12px 0 4px; }
 .vu-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .vu { position: relative; }
 .vu canvas { display: block; width: 100%; height: auto; }
 .vu span { position: absolute; bottom: 8px; left: 50%; color: var(--muted); }
+.visual-note { color: var(--muted); font-size: 12px; margin: 8px 0 0; text-align: right; }
 .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; padding-bottom: 32px; }
 dl { margin: 0 0 18px; }
 dl div { display: flex; justify-content: space-between; gap: 16px; padding: 8px 0; border-bottom: 1px solid var(--edge); }
@@ -142,171 +192,379 @@ dt { color: var(--muted); }
 dd { margin: 0; font-variant-numeric: tabular-nums; text-align: right; }
 label { display: block; color: var(--muted); margin: 12px 0 5px; }
 input, select, button, .button {
-  border: 1px solid var(--edge); border-radius: 6px; background: #171716;
-  color: var(--text); padding: 10px 12px; font: inherit;
+  border: 1px solid var(--edge);
+  border-radius: 6px;
+  background: #171716;
+  color: var(--text);
+  padding: 10px 12px;
+  font: inherit;
 }
 input, select { width: 100%; }
 button, .button { cursor: pointer; display: inline-block; text-decoration: none; margin-top: 12px; }
 button:not(.secondary), .button { background: var(--amber); border-color: var(--amber); color: #17110a; }
 button:disabled { opacity: .42; cursor: not-allowed; }
-.secondary, .help { color: var(--muted); }
+.secondary { color: var(--muted); }
 .network-results { display: grid; gap: 6px; margin-top: 8px; }
 .network-results button { width: 100%; margin: 0; text-align: left; }
 audio { width: 100%; margin: 4px 0 8px; }
-.help { margin: 12px 0 0; }
+.help { color: var(--muted); margin: 12px 0 0; }
+
 @media (max-width: 720px) {
   header, .visual-heading { align-items: flex-start; flex-direction: column; }
   .grid, .vu-pair { grid-template-columns: 1fr; }
-  .visual-heading > p { margin-bottom: 0; }
+  .visual-tools { width: 100%; align-items: flex-start; justify-content: space-between; }
+  .visual-note { text-align: left; }
 }
 )CDTS";
 
 inline constexpr char kApp[] = R"CDTS(const $ = id => document.getElementById(id);
-const frequencies = ['63','100','160','250','400','630','1k','1.6k','2.5k','4k','6.3k','8k','10k','12.5k','16k','20k'];
-const levelToUnit = db => Math.max(0, Math.min(1, (db + 60) / 63));
+const frequencies = ['63', '100', '160', '250', '400', '630', '1k', '1.6k', '2.5k', '4k', '6.3k', '8k', '10k', '12.5k', '16k', '20k'];
+const POLL_MS = 250;
+const HIDDEN_POLL_MS = 2000;
+const FRAME_MS = 1000 / 30;
+const vuFaceCache = new WeakMap();
 let previousStatus = null;
+let pollTimer = 0;
+let pollInFlight = false;
+let lastFrameAt = 0;
+
+const visuals = {
+  mode: localStorage.getItem('cdts-visual') === 'spectrum' ? 'spectrum' : 'vu',
+  spectrumTarget: new Array(16).fill(-96),
+  spectrumDisplay: new Array(16).fill(-96),
+  vuTarget: [-96, -96],
+  vuDisplay: [-96, -96]
+};
+
+function finiteDb(value) {
+  return Number.isFinite(Number(value)) ? Math.max(-96, Math.min(3, Number(value))) : -96;
+}
+
+function levelToUnit(db) {
+  return Math.max(0, Math.min(1, (finiteDb(db) + 60) / 63));
+}
+
+function vuToUnit(db) {
+  return Math.max(0, Math.min(1, (finiteDb(db) + 24) / 27));
+}
+
+function approach(current, target, elapsedMs, attackMs, releaseMs) {
+  const timeConstant = target > current ? attackMs : releaseMs;
+  return current + (target - current) * (1 - Math.exp(-elapsedMs / timeConstant));
+}
 
 function drawSpectrum(values) {
-  const canvas = $('spectrum'), context = canvas.getContext('2d');
-  const width = canvas.width, height = canvas.height, gap = 8;
+  const canvas = $('spectrum');
+  const context = canvas.getContext('2d');
+  const width = canvas.width;
+  const height = canvas.height;
+  const gap = 8;
   const barWidth = (width - gap * (values.length - 1)) / values.length;
   context.clearRect(0, 0, width, height);
+  const background = context.createLinearGradient(0, 0, 0, height);
+  background.addColorStop(0, '#24211d');
+  background.addColorStop(1, '#121211');
+  context.fillStyle = background;
+  context.fillRect(0, 0, width, height);
+  context.strokeStyle = '#ffffff12';
+  context.lineWidth = 1;
+  for (let line = 0; line <= 4; line++) {
+    const y = 8 + line * ((height - 42) / 4);
+    context.beginPath();
+    context.moveTo(0, y);
+    context.lineTo(width, y);
+    context.stroke();
+  }
   const gradient = context.createLinearGradient(0, height, 0, 0);
-  gradient.addColorStop(0, '#d88420'); gradient.addColorStop(.7, '#f2bd45'); gradient.addColorStop(1, '#e3513c');
+  gradient.addColorStop(0, '#35a77a');
+  gradient.addColorStop(.48, '#f2bd45');
+  gradient.addColorStop(.82, '#ef7d2a');
+  gradient.addColorStop(1, '#e3513c');
   values.forEach((db, index) => {
-    const barHeight = levelToUnit(db) * (height - 34), x = index * (barWidth + gap);
-    context.fillStyle = gradient; context.fillRect(x, height - 26 - barHeight, barWidth, barHeight);
-    context.fillStyle = '#b9b0a2'; context.textAlign = 'center'; context.font = '16px system-ui';
-    context.fillText(frequencies[index], x + barWidth / 2, height - 6);
+    const barHeight = levelToUnit(db) * (height - 42);
+    const x = index * (barWidth + gap);
+    context.fillStyle = gradient;
+    context.fillRect(x, height - 28 - barHeight, barWidth, barHeight);
+    context.fillStyle = '#b9b0a2';
+    context.textAlign = 'center';
+    context.font = '16px system-ui';
+    context.fillText(frequencies[index], x + barWidth / 2, height - 7);
   });
 }
 
-function drawVu(canvas, db) {
-  const context = canvas.getContext('2d'), width = canvas.width, height = canvas.height;
-  const cx = width / 2, cy = height * .9, radius = Math.min(width * .43, height * .78);
-  context.clearRect(0, 0, width, height);
+function createVuFace(canvas) {
+  const faceCanvas = document.createElement('canvas');
+  faceCanvas.width = canvas.width;
+  faceCanvas.height = canvas.height;
+  const context = faceCanvas.getContext('2d');
+  const width = faceCanvas.width;
+  const height = faceCanvas.height;
+  const cx = width / 2;
+  const cy = height * .9;
+  const radius = Math.min(width * .43, height * .78);
   const face = context.createLinearGradient(0, 0, 0, height);
-  face.addColorStop(0, '#f8c965'); face.addColorStop(1, '#b86a19');
-  context.fillStyle = face; context.strokeStyle = '#080808'; context.lineWidth = 12;
-  context.fillRect(8, 8, width - 16, height - 16); context.strokeRect(8, 8, width - 16, height - 16);
+  face.addColorStop(0, '#f8c965');
+  face.addColorStop(1, '#b86a19');
+  context.fillStyle = face;
+  context.strokeStyle = '#080808';
+  context.lineWidth = 12;
+  context.fillRect(8, 8, width - 16, height - 16);
+  context.strokeRect(8, 8, width - 16, height - 16);
   for (let index = 0; index <= 10; index++) {
-    const angle = Math.PI * (.75 + index * .15), inner = radius - (index % 5 === 0 ? 22 : 14);
-    context.beginPath(); context.moveTo(cx + Math.cos(angle) * inner, cy + Math.sin(angle) * inner);
+    const angle = Math.PI * (.75 + index * .15);
+    const inner = radius - (index % 5 === 0 ? 22 : 14);
+    context.beginPath();
+    context.moveTo(cx + Math.cos(angle) * inner, cy + Math.sin(angle) * inner);
     context.lineTo(cx + Math.cos(angle) * radius, cy + Math.sin(angle) * radius);
-    context.strokeStyle = index > 7 ? '#a82418' : '#292016'; context.lineWidth = 2; context.stroke();
+    context.strokeStyle = index > 7 ? '#a82418' : '#292016';
+    context.lineWidth = 2;
+    context.stroke();
   }
-  const needleAngle = Math.PI * (.75 + levelToUnit(db) * 1.5);
-  context.beginPath(); context.moveTo(cx, cy);
+  context.fillStyle = '#292016';
+  context.font = 'bold 16px system-ui';
+  context.textAlign = 'right';
+  context.fillText('VU', width - 22, height - 22);
+  vuFaceCache.set(canvas, faceCanvas);
+  return faceCanvas;
+}
+
+function drawVu(canvas, db) {
+  const context = canvas.getContext('2d');
+  const width = canvas.width;
+  const height = canvas.height;
+  const cx = width / 2;
+  const cy = height * .9;
+  const radius = Math.min(width * .43, height * .78);
+  const face = vuFaceCache.get(canvas) || createVuFace(canvas);
+  context.clearRect(0, 0, width, height);
+  context.drawImage(face, 0, 0);
+  const needleAngle = Math.PI * (.75 + vuToUnit(db) * 1.5);
+  context.beginPath();
+  context.moveTo(cx, cy);
   context.lineTo(cx + Math.cos(needleAngle) * (radius - 8), cy + Math.sin(needleAngle) * (radius - 8));
-  context.strokeStyle = '#17100b'; context.lineWidth = 3; context.stroke();
-  context.beginPath(); context.arc(cx, cy, 9, 0, Math.PI * 2); context.fillStyle = '#17100b'; context.fill();
-  context.fillStyle = '#292016'; context.font = '17px system-ui'; context.textAlign = 'center';
-  context.fillText(`${db.toFixed(1)} dBFS`, cx, height - 18);
+  context.strokeStyle = '#17100b';
+  context.lineWidth = 3;
+  context.stroke();
+  context.beginPath();
+  context.arc(cx, cy, 9, 0, Math.PI * 2);
+  context.fillStyle = '#17100b';
+  context.fill();
+  context.fillStyle = '#292016';
+  context.font = '17px system-ui';
+  context.textAlign = 'center';
+  context.fillText(`${finiteDb(db).toFixed(1)} dBFS`, cx, height - 18);
+}
+
+function setVisualMode(mode) {
+  visuals.mode = mode === 'spectrum' ? 'spectrum' : 'vu';
+  $('spectrumView').hidden = visuals.mode !== 'spectrum';
+  $('vuView').hidden = visuals.mode !== 'vu';
+  document.querySelectorAll('[data-visual]').forEach(button => {
+    const selected = button.dataset.visual === visuals.mode;
+    button.setAttribute('aria-pressed', String(selected));
+    button.classList.toggle('secondary', !selected);
+  });
+  localStorage.setItem('cdts-visual', visuals.mode);
+}
+
+function animateVisual(now) {
+  const elapsed = Math.min(100, Math.max(1, now - (lastFrameAt || now - FRAME_MS)));
+  if (!document.hidden && now - lastFrameAt >= FRAME_MS) {
+    lastFrameAt = now;
+    if (visuals.mode === 'spectrum') {
+      visuals.spectrumDisplay = visuals.spectrumDisplay.map((current, index) =>
+        approach(current, visuals.spectrumTarget[index], elapsed, 55, 190));
+      drawSpectrum(visuals.spectrumDisplay);
+    } else {
+      visuals.vuDisplay = visuals.vuDisplay.map((current, index) =>
+        approach(current, visuals.vuTarget[index], elapsed, 55, 260));
+      drawVu($('vuLeft'), visuals.vuDisplay[0]);
+      drawVu($('vuRight'), visuals.vuDisplay[1]);
+    }
+  }
+  requestAnimationFrame(animateVisual);
+}
+
+function updateVisualTargets(state) {
+  if (Array.isArray(state.spectrum)) {
+    visuals.spectrumTarget = frequencies.map((_, index) => finiteDb(state.spectrum[index]));
+  }
+  visuals.vuTarget[0] = finiteDb(state.rms_l);
+  visuals.vuTarget[1] = finiteDb(state.rms_r);
+}
+
+function updateDashboard(state) {
+  $('clockState').textContent = state.clock_locked ? 'I2S locked' : 'Waiting for I2S';
+  $('clockState').classList.toggle('live', state.clock_locked);
+  $('signal').textContent = state.signal_present ? 'Audio present' : 'Silent';
+  $('clients').textContent = state.stream_clients;
+  $('overruns').textContent = state.overruns;
+  $('ip').textContent = state.ip;
+  $('heap').textContent = `${Math.round(state.heap_free / 1024)} KB`;
+  $('cpu').textContent = `${Number(state.cpu_percent).toFixed(1)}% at ${state.cpu_mhz} MHz`;
+  $('cpuCores').textContent = `${Number(state.cpu0_percent).toFixed(1)}% / ${Number(state.cpu1_percent).toFixed(1)}%`;
+  $('captureStack').textContent = `${state.capture_stack_free} bytes`;
+  $('analysisStack').textContent = `${state.analysis_stack_free} bytes`;
+  $('analysisRuns').textContent = state.analysis_runs;
+  $('sourceRate').textContent = `${Number(state.source_rate_hz).toLocaleString()} Hz`;
+  $('captured').textContent = `${Math.round(state.captured_frames / state.sample_rate)} s`;
+  $('timeouts').textContent = state.read_timeouts;
+  $('version').textContent = state.version;
+  $('networkState').textContent = state.wifi_connected
+    ? `Connected at ${state.ip} - ${state.wifi_rssi} dBm - power save off`
+    : 'Setup access point active';
+  $('streamLink').href = state.stream_url;
+  $('sonosAuto').textContent = state.sonos_group_name
+    ? `Automatic - ${state.sonos_group_name} - ${state.sonos_auto_state}`
+    : `Automatic - ${state.sonos_auto_state}`;
+  if (state.sonos_group_ip) {
+    const select = $('sonosPlayer');
+    let option = [...select.options].find(item => item.value === state.sonos_group_ip);
+    if (!option) {
+      option = document.createElement('option');
+      option.value = state.sonos_group_ip;
+      option.textContent = state.sonos_group_name || state.sonos_group_ip;
+      select.appendChild(option);
+    }
+    if (!select.value) select.value = state.sonos_group_ip;
+    $('playSonos').disabled = false;
+    $('stopSonos').disabled = false;
+  }
+  const audio = $('localAudio');
+  if (audio.getAttribute('src') !== state.stream_url) audio.src = state.stream_url;
+  $('format').textContent = `${state.sample_rate / 1000} kHz - ${state.bits}-bit - ${state.channels === 2 ? 'stereo' : 'mono'} FLAC`;
+  const now = performance.now();
+  if (previousStatus && state.stream_frames >= previousStatus.streamFrames) {
+    const elapsed = (now - previousStatus.at) / 1000;
+    const delivered = ((state.stream_frames - previousStatus.streamFrames) * 1024) / elapsed;
+    $('delivery').textContent = `${Math.round(delivered).toLocaleString()} /s`;
+  }
+  previousStatus = {at: now, streamFrames: state.stream_frames};
+  updateVisualTargets(state);
+}
+
+function scheduleStatus(delay = document.hidden ? HIDDEN_POLL_MS : POLL_MS) {
+  clearTimeout(pollTimer);
+  pollTimer = setTimeout(updateStatus, delay);
 }
 
 async function updateStatus() {
+  if (pollInFlight) {
+    scheduleStatus();
+    return;
+  }
+  pollInFlight = true;
   try {
-    const response = await fetch('/api/status', {cache: 'no-store'}), state = await response.json();
-    $('clockState').textContent = state.clock_locked ? 'I²S locked' : 'Waiting for I²S';
-    $('clockState').classList.toggle('live', state.clock_locked);
-    $('signal').textContent = state.signal_present ? 'Audio present' : 'Silent';
-    $('clients').textContent = state.stream_clients; $('overruns').textContent = state.overruns;
-    $('ip').textContent = state.ip; $('heap').textContent = `${Math.round(state.heap_free / 1024)} KB`;
-    $('cpu').textContent = `${state.cpu_percent.toFixed(1)}% at ${state.cpu_mhz} MHz`;
-    $('cpuCores').textContent = `${state.cpu0_percent.toFixed(1)}% / ${state.cpu1_percent.toFixed(1)}%`;
-    $('captureStack').textContent = `${state.capture_stack_free} bytes`;
-    $('analysisStack').textContent = `${state.analysis_stack_free} bytes`;
-    $('analysisRuns').textContent = state.analysis_runs;
-    $('sourceRate').textContent = `${state.source_rate_hz.toLocaleString()} Hz`;
-    $('captured').textContent = `${Math.round(state.captured_frames / state.sample_rate)} s`;
-    $('timeouts').textContent = state.read_timeouts; $('version').textContent = state.version;
-    $('networkState').textContent = state.wifi_connected
-      ? `Connected at ${state.ip} · ${state.wifi_rssi} dBm · power save off`
-      : 'Setup access point active';
-    $('streamLink').href = state.stream_url;
-    $('sonosAuto').textContent = state.sonos_group_name
-      ? `Automatic Â· ${state.sonos_group_name} Â· ${state.sonos_auto_state}`
-      : `Automatic Â· ${state.sonos_auto_state}`;
-    if (state.sonos_group_ip) {
-      const select = $('sonosPlayer');
-      let option = [...select.options].find(item => item.value === state.sonos_group_ip);
-      if (!option) {
-        option = document.createElement('option'); option.value = state.sonos_group_ip;
-        option.textContent = state.sonos_group_name || state.sonos_group_ip;
-        select.appendChild(option);
-      }
-      if (!select.value) select.value = state.sonos_group_ip;
-      $('playSonos').disabled = false; $('stopSonos').disabled = false;
-    }
-    const audio = $('localAudio');
-    if (audio.getAttribute('src') !== state.stream_url) audio.src = state.stream_url;
-    $('format').textContent = `${state.sample_rate / 1000} kHz · ${state.bits}-bit · ${state.channels === 2 ? 'stereo' : 'mono'} FLAC`;
-    const now = performance.now();
-    if (previousStatus && state.stream_frames >= previousStatus.streamFrames) {
-      const elapsed = (now - previousStatus.at) / 1000;
-      const delivered = ((state.stream_frames - previousStatus.streamFrames) * 1024) / elapsed;
-      $('delivery').textContent = `${Math.round(delivered).toLocaleString()} /s`;
-    }
-    previousStatus = {at: now, streamFrames: state.stream_frames};
-    drawSpectrum(state.spectrum); drawVu($('vuLeft'), state.rms_l); drawVu($('vuRight'), state.rms_r);
-  } catch (_) { $('clockState').textContent = 'Dashboard disconnected'; }
+    const response = await fetch('/api/status', {cache: 'no-store'});
+    if (!response.ok) throw new Error(`Status ${response.status}`);
+    updateDashboard(await response.json());
+  } catch (error) {
+    $('clockState').textContent = 'Dashboard disconnected';
+    $('clockState').classList.remove('live');
+  } finally {
+    pollInFlight = false;
+    scheduleStatus();
+  }
 }
 
 $('wifiForm').addEventListener('submit', async event => {
-  event.preventDefault(); $('networkState').textContent = 'Saving securely and restarting…';
-  const response = await fetch('/api/wifi', {method: 'POST', body: new URLSearchParams(new FormData(event.currentTarget))});
+  event.preventDefault();
+  $('networkState').textContent = 'Saving securely and restarting...';
+  const body = new URLSearchParams(new FormData(event.currentTarget));
+  const response = await fetch('/api/wifi', {method: 'POST', body});
   if (!response.ok) $('networkState').textContent = 'Unable to save Wi-Fi settings';
 });
+
 $('scanWifi').addEventListener('click', async () => {
-  const button = $('scanWifi'), results = $('wifiResults');
-  button.disabled = true; button.textContent = 'Scanning…'; results.innerHTML = '';
+  const button = $('scanWifi');
+  const results = $('wifiResults');
+  button.disabled = true;
+  button.textContent = 'Scanning...';
+  results.innerHTML = '';
   try {
     const data = await (await fetch('/api/wifi/scan', {cache: 'no-store'})).json();
     data.networks.forEach(network => {
       const choice = document.createElement('button');
-      choice.type = 'button'; choice.className = 'secondary';
-      choice.textContent = `${network.ssid} · ${network.rssi} dBm${network.secure ? ' · secured' : ' · open'}`;
-      choice.addEventListener('click', () => { $('ssid').value = network.ssid; $('password').focus(); });
+      choice.type = 'button';
+      choice.className = 'secondary';
+      choice.textContent = `${network.ssid} - ${network.rssi} dBm - ${network.secure ? 'secured' : 'open'}`;
+      choice.addEventListener('click', () => {
+        $('ssid').value = network.ssid;
+        $('password').focus();
+      });
       results.appendChild(choice);
     });
     if (!data.networks.length) results.textContent = 'No networks found';
-  } catch (_) { results.textContent = 'Scan failed'; }
-  finally { button.disabled = false; button.textContent = 'Scan for networks'; }
+  } catch (error) {
+    results.textContent = 'Scan failed';
+  } finally {
+    button.disabled = false;
+    button.textContent = 'Scan for networks';
+  }
 });
+
 $('discoverSonos').addEventListener('click', async () => {
-  $('sonosMessage').textContent = 'Discovering Sonos rooms and groups…';
-  const result = await (await fetch('/api/sonos/discover')).json(), select = $('sonosPlayer');
+  $('sonosMessage').textContent = 'Discovering Sonos rooms and groups...';
+  const response = await fetch('/api/sonos/discover');
+  const result = await response.json();
+  const select = $('sonosPlayer');
   select.innerHTML = '<option value="">Select group or room</option>';
   result.groups.forEach(group => {
-    const option = document.createElement('option'); option.value = group.ip;
-    option.dataset.uuid = group.uuid; option.textContent = group.name; select.appendChild(option);
+    const option = document.createElement('option');
+    option.value = group.ip;
+    option.dataset.uuid = group.uuid;
+    option.textContent = group.name;
+    select.appendChild(option);
   });
   if (result.selected_ip) select.value = result.selected_ip;
-  $('playSonos').disabled = !select.value; $('stopSonos').disabled = !select.value;
+  $('playSonos').disabled = !select.value;
+  $('stopSonos').disabled = !select.value;
   $('sonosMessage').textContent = result.groups.length
     ? `${result.groups.length} room/group option(s) found`
     : 'No Sonos rooms or groups found';
 });
+
 $('sonosPlayer').addEventListener('change', async event => {
-  $('playSonos').disabled = !event.target.value; $('stopSonos').disabled = !event.target.value;
+  $('playSonos').disabled = !event.target.value;
+  $('stopSonos').disabled = !event.target.value;
   const option = event.target.selectedOptions[0];
   if (event.target.value) {
-    await fetch('/api/sonos/select', {method: 'POST', body: new URLSearchParams({
-      ip: event.target.value, uuid: option.dataset.uuid || '', name: option.textContent
-    })});
+    await fetch('/api/sonos/select', {
+      method: 'POST',
+      body: new URLSearchParams({
+        ip: event.target.value,
+        uuid: option.dataset.uuid || '',
+        name: option.textContent
+      })
+    });
     $('sonosMessage').textContent = `${option.textContent} saved as the automatic default`;
   }
 });
+
 async function sonosAction(action) {
-  const ip = $('sonosPlayer').value; if (!ip) return;
-  $('sonosMessage').textContent = `${action === 'play' ? 'Starting' : 'Stopping'} Sonos…`;
-  const response = await fetch(`/api/sonos/${action}`, {method: 'POST', body: new URLSearchParams({ip})});
+  const ip = $('sonosPlayer').value;
+  if (!ip) return;
+  $('sonosMessage').textContent = `${action === 'play' ? 'Starting' : 'Stopping'} Sonos...`;
+  const response = await fetch(`/api/sonos/${action}`, {
+    method: 'POST',
+    body: new URLSearchParams({ip})
+  });
   $('sonosMessage').textContent = response.ok ? `Sonos ${action} command accepted` : `Sonos ${action} failed`;
 }
+
+document.querySelectorAll('[data-visual]').forEach(button => {
+  button.addEventListener('click', () => setVisualMode(button.dataset.visual));
+});
 $('playSonos').addEventListener('click', () => sonosAction('play'));
 $('stopSonos').addEventListener('click', () => sonosAction('stop'));
-drawSpectrum(new Array(16).fill(-96)); drawVu($('vuLeft'), -96); drawVu($('vuRight'), -96);
-updateStatus(); setInterval(updateStatus, 250);
+document.addEventListener('visibilitychange', () => scheduleStatus(0));
+
+setVisualMode(visuals.mode);
+drawSpectrum(visuals.spectrumDisplay);
+drawVu($('vuLeft'), visuals.vuDisplay[0]);
+drawVu($('vuRight'), visuals.vuDisplay[1]);
+requestAnimationFrame(animateVisual);
+updateStatus();
 )CDTS";
 
 }  // namespace cdts::web_assets

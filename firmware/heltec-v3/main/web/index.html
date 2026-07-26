@@ -9,12 +9,12 @@
 <body>
   <header>
     <div>
-      <p class="eyebrow">NAD C541i · lossless network transport</p>
+      <p class="eyebrow">NAD C541i - lossless network transport</p>
       <h1>CD to Sonos</h1>
     </div>
     <div class="status-pills">
       <span id="radioState" class="pill safe">LoRa disabled</span>
-      <span id="clockState" class="pill">Waiting for I²S</span>
+      <span id="clockState" class="pill">Waiting for I2S</span>
     </div>
   </header>
 
@@ -25,13 +25,24 @@
           <p class="eyebrow">Live audio</p>
           <h2>Digital input monitor</h2>
         </div>
-        <p id="format">44.1 kHz · 16-bit · stereo FLAC</p>
+        <div class="visual-tools">
+          <p id="format">44.1 kHz - 16-bit - stereo FLAC</p>
+          <div class="visual-toggle" role="group" aria-label="Audio visualizer">
+            <button id="showVu" type="button" data-visual="vu" aria-pressed="true">VU meters</button>
+            <button id="showSpectrum" class="secondary" type="button" data-visual="spectrum" aria-pressed="false">Spectrum</button>
+          </div>
+        </div>
       </div>
-      <canvas id="spectrum" width="1000" height="230" aria-label="Live audio spectrum"></canvas>
-      <div class="vu-pair">
-        <div class="vu"><canvas id="vuLeft" width="420" height="210"></canvas><span>L</span></div>
-        <div class="vu"><canvas id="vuRight" width="420" height="210"></canvas><span>R</span></div>
+      <div id="spectrumView" class="visual-view" hidden>
+        <canvas id="spectrum" width="1000" height="230" aria-label="Live audio spectrum"></canvas>
       </div>
+      <div id="vuView" class="visual-view">
+        <div class="vu-pair">
+          <div class="vu"><canvas id="vuLeft" width="420" height="210" aria-label="Left channel VU meter"></canvas><span>L</span></div>
+          <div class="vu"><canvas id="vuRight" width="420" height="210" aria-label="Right channel VU meter"></canvas><span>R</span></div>
+        </div>
+      </div>
+      <p class="visual-note">30 fps display smoothing runs in this browser; the lossless stream remains the device priority.</p>
     </section>
 
     <section class="grid">
@@ -49,21 +60,21 @@
 
       <article class="panel">
         <p class="eyebrow">Sonos</p>
-          <h2>Sonos playback</h2>
-          <label for="sonosPlayer">Group or room</label>
-          <select id="sonosPlayer"><option value="">Select group or room</option></select>
+        <h2>Sonos playback</h2>
+        <label for="sonosPlayer">Group or room</label>
+        <select id="sonosPlayer"><option value="">Select group or room</option></select>
         <div class="actions">
           <button id="discoverSonos" type="button">Discover</button>
           <button id="playSonos" type="button" disabled>Play</button>
           <button id="stopSonos" class="secondary" type="button" disabled>Stop</button>
         </div>
-        <p id="sonosAuto" class="help">Automatic playback is starting…</p>
+        <p id="sonosAuto" class="help">Automatic playback is starting...</p>
         <p id="sonosMessage" class="help">Choose a room or existing Sonos group. Bonding is never changed.</p>
       </article>
 
       <article class="panel">
         <p class="eyebrow">Network</p>
-        <h2>Wi‑Fi setup</h2>
+        <h2>Wi-Fi setup</h2>
         <form id="wifiForm">
           <label for="ssid">Network name</label>
           <input id="ssid" name="ssid" maxlength="32" required autocomplete="off">
@@ -73,18 +84,25 @@
           <input id="password" name="password" type="password" maxlength="64" autocomplete="new-password">
           <button type="submit">Save and restart</button>
         </form>
-        <p id="networkState" class="help">Checking network…</p>
+        <p id="networkState" class="help">Checking network...</p>
       </article>
 
       <article class="panel">
         <p class="eyebrow">Diagnostics</p>
         <h2>System</h2>
         <dl>
-          <div><dt>IP address</dt><dd id="ip">—</dd></div>
-          <div><dt>Free heap</dt><dd id="heap">—</dd></div>
-          <div><dt>Captured</dt><dd id="captured">—</dd></div>
-          <div><dt>I²S timeouts</dt><dd id="timeouts">0</dd></div>
-          <div><dt>Firmware</dt><dd id="version">—</dd></div>
+          <div><dt>IP address</dt><dd id="ip">--</dd></div>
+          <div><dt>Free heap</dt><dd id="heap">--</dd></div>
+          <div><dt>CPU load</dt><dd id="cpu">--</dd></div>
+          <div><dt>CPU cores</dt><dd id="cpuCores">--</dd></div>
+          <div><dt>Stream delivery</dt><dd id="delivery">--</dd></div>
+          <div><dt>Source LRCLK</dt><dd id="sourceRate">--</dd></div>
+          <div><dt>Captured</dt><dd id="captured">--</dd></div>
+          <div><dt>I2S timeouts</dt><dd id="timeouts">0</dd></div>
+          <div><dt>Capture stack free</dt><dd id="captureStack">--</dd></div>
+          <div><dt>Analysis stack free</dt><dd id="analysisStack">--</dd></div>
+          <div><dt>Analysis updates</dt><dd id="analysisRuns">0</dd></div>
+          <div><dt>Firmware</dt><dd id="version">--</dd></div>
         </dl>
       </article>
     </section>

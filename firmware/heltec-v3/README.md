@@ -41,6 +41,12 @@ Before Wi-Fi, I2S or any service starts:
 
 ## Build
 
+After changing a file under `main/web`, regenerate the embedded assets:
+
+```sh
+python tools/embed_web.py
+```
+
 ```sh
 pio run
 pio run --target upload --upload-port COM13

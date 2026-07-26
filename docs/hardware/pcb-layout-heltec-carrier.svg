@@ -1,0 +1,191 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1050" viewBox="0 0 1600 1050" role="img" aria-labelledby="title desc">
+  <title id="title">CDtoSonos Heltec V3 two-layer carrier PCB reference layout</title>
+  <desc id="desc">Reference top and bottom copper layout for a 92 by 60 millimetre carrier PCB with Heltec V3 sockets, SN74LVC245 buffer, protected NAD input, decoupling, mounting holes, ground plane and keep-out areas.</desc>
+  <defs>
+    <style>
+      .bg{fill:#eae7df}.board{fill:#255d42;stroke:#173426;stroke-width:4}.mask{fill:#2d7753;stroke:#193f2e;stroke-width:3}
+      .silk{fill:none;stroke:#f3eee4;stroke-width:2}.silkfill{fill:#f3eee4}.copper{fill:none;stroke:#d6a33b;stroke-width:7;stroke-linecap:round;stroke-linejoin:round}
+      .power{fill:none;stroke:#d75245;stroke-width:9;stroke-linecap:round;stroke-linejoin:round}.ground{fill:none;stroke:#31363a;stroke-width:10;stroke-linecap:round}
+      .plane{fill:#ba7c31;opacity:.42;stroke:#8a561f;stroke-width:2}.keepout{fill:#fff3c4;fill-opacity:.34;stroke:#f5d459;stroke-width:3;stroke-dasharray:9 7}
+      .pad{fill:#dbc376;stroke:#7e5b20;stroke-width:2}.hole{fill:#eae7df;stroke:#6d5529;stroke-width:2}.via{fill:#dbc376;stroke:#7e5b20;stroke-width:2}
+      .chip{fill:#272727;stroke:#101010;stroke-width:3}.socket{fill:none;stroke:#202020;stroke-width:5}.res{fill:#d8bd84;stroke:#4a3923;stroke-width:2}
+      .title{font:bold 32px Arial,sans-serif;fill:#25221e}.subtitle{font:18px Arial,sans-serif;fill:#524b43}.head{font:bold 24px Arial,sans-serif;fill:#28241f}
+      .label{font:bold 18px Arial,sans-serif;fill:#28241f}.pcbtext{font:bold 15px Arial,sans-serif;fill:#f3eee4}.small{font:15px Arial,sans-serif;fill:#48423b}
+      .note{fill:#fff9ec;stroke:#796242;stroke-width:2}.warn{fill:#fff0ce;stroke:#a46600;stroke-width:2}
+      .dim{fill:none;stroke:#4e4942;stroke-width:2;marker-start:url(#arrow);marker-end:url(#arrow)}
+    </style>
+    <marker id="arrow" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto-start-reverse">
+      <path d="M8 0L0 4l8 4z" fill="#4e4942"/>
+    </marker>
+  </defs>
+
+  <rect class="bg" width="1600" height="1050"/>
+  <text class="title" x="800" y="42" text-anchor="middle">Heltec V3 carrier PCB - two-layer reference layout</text>
+  <text class="subtitle" x="800" y="72" text-anchor="middle">92 x 60 mm - 1.6 mm FR-4 - 2 oz not required - USB powered - fabrication files require KiCad DRC</text>
+
+  <text class="head" x="405" y="120" text-anchor="middle">Top / component side</text>
+  <text class="head" x="1195" y="120" text-anchor="middle">Bottom copper / ground plane</text>
+
+  <!-- TOP BOARD -->
+  <g id="top-board">
+    <rect class="board" x="60" y="145" width="690" height="450" rx="12"/>
+    <!-- Dimensions -->
+    <path class="dim" d="M60 625H750"/><text class="small" x="405" y="650" text-anchor="middle">92.0 mm</text>
+    <path class="dim" d="M30 145V595"/><text class="small" x="18" y="370" text-anchor="middle" transform="rotate(-90 18 370)">60.0 mm</text>
+
+    <!-- M3 mounting holes -->
+    <g>
+      <circle class="pad" cx="90" cy="175" r="15"/><circle class="hole" cx="90" cy="175" r="9"/>
+      <circle class="pad" cx="720" cy="175" r="15"/><circle class="hole" cx="720" cy="175" r="9"/>
+      <circle class="pad" cx="90" cy="565" r="15"/><circle class="hole" cx="90" cy="565" r="9"/>
+      <circle class="pad" cx="720" cy="565" r="15"/><circle class="hole" cx="720" cy="565" r="9"/>
+      <text class="pcbtext" x="110" y="185">H1</text><text class="pcbtext" x="680" y="185">H2</text>
+      <text class="pcbtext" x="110" y="570">H3</text><text class="pcbtext" x="680" y="570">H4</text>
+    </g>
+
+    <!-- NAD input J1 -->
+    <rect class="silk" x="75" y="275" width="55" height="145" rx="5"/>
+    <text class="pcbtext" x="102" y="260" text-anchor="middle">J1 NAD PCM</text>
+    <g>
+      <circle class="pad" cx="102" cy="300" r="10"/><circle class="hole" cx="102" cy="300" r="4"/>
+      <circle class="pad" cx="102" cy="335" r="10"/><circle class="hole" cx="102" cy="335" r="4"/>
+      <circle class="pad" cx="102" cy="370" r="10"/><circle class="hole" cx="102" cy="370" r="4"/>
+      <rect class="pad" x="92" y="395" width="20" height="20" rx="2"/><circle class="hole" cx="102" cy="405" r="4"/>
+    </g>
+    <text class="pcbtext" x="138" y="305">BCLK</text><text class="pcbtext" x="138" y="340">LRCLK</text>
+    <text class="pcbtext" x="138" y="375">DATA</text><text class="pcbtext" x="138" y="410">DGND</text>
+
+    <!-- Series protection -->
+    <g>
+      <rect class="res" x="185" y="287" width="76" height="26" rx="5"/><circle class="pad" cx="195" cy="300" r="7"/><circle class="pad" cx="251" cy="300" r="7"/>
+      <rect class="res" x="185" y="322" width="76" height="26" rx="5"/><circle class="pad" cx="195" cy="335" r="7"/><circle class="pad" cx="251" cy="335" r="7"/>
+      <rect class="res" x="185" y="357" width="76" height="26" rx="5"/><circle class="pad" cx="195" cy="370" r="7"/><circle class="pad" cx="251" cy="370" r="7"/>
+      <text class="pcbtext" x="223" y="282" text-anchor="middle">R1-R3 1k</text>
+    </g>
+
+    <!-- U1 DIP-20 -->
+    <rect class="socket" x="295" y="220" width="120" height="300" rx="8"/>
+    <rect class="chip" x="310" y="235" width="90" height="270" rx="8"/>
+    <path d="M335 235a20 13 0 0 0 40 0" fill="#2d7753"/>
+    <circle cx="323" cy="250" r="6" fill="#e4c83c"/>
+    <text x="355" y="380" text-anchor="middle" transform="rotate(-90 355 380)" style="font:bold 19px Arial,sans-serif;fill:#f4eee4">U1 SN74LVC245AN</text>
+    <g>
+      <circle class="pad" cx="300" cy="240" r="9"/><circle class="pad" cx="410" cy="240" r="9"/>
+      <circle class="pad" cx="300" cy="270" r="9"/><circle class="pad" cx="410" cy="270" r="9"/>
+      <circle class="pad" cx="300" cy="300" r="9"/><circle class="pad" cx="410" cy="300" r="9"/>
+      <circle class="pad" cx="300" cy="330" r="9"/><circle class="pad" cx="410" cy="330" r="9"/>
+      <circle class="pad" cx="300" cy="360" r="9"/><circle class="pad" cx="410" cy="360" r="9"/>
+      <circle class="pad" cx="300" cy="390" r="9"/><circle class="pad" cx="410" cy="390" r="9"/>
+      <circle class="pad" cx="300" cy="420" r="9"/><circle class="pad" cx="410" cy="420" r="9"/>
+      <circle class="pad" cx="300" cy="450" r="9"/><circle class="pad" cx="410" cy="450" r="9"/>
+      <circle class="pad" cx="300" cy="480" r="9"/><circle class="pad" cx="410" cy="480" r="9"/>
+      <circle class="pad" cx="300" cy="510" r="9"/><circle class="pad" cx="410" cy="510" r="9"/>
+    </g>
+
+    <!-- C1 -->
+    <circle class="pad" cx="445" cy="240" r="8"/><circle class="pad" cx="445" cy="270" r="8"/>
+    <path class="silk" d="M432 250H458M432 260H458"/><text class="pcbtext" x="470" y="260">C1 100n</text>
+
+    <!-- Heltec socket footprint -->
+    <rect class="silk" x="500" y="180" width="190" height="370" rx="10"/>
+    <rect class="keepout" x="515" y="180" width="160" height="65" rx="6"/>
+    <text class="pcbtext" x="595" y="205" text-anchor="middle">Wi-Fi antenna keep-out</text>
+    <rect class="keepout" x="540" y="505" width="110" height="45" rx="6"/>
+    <text class="pcbtext" x="595" y="535" text-anchor="middle">USB-C access</text>
+    <text class="pcbtext" x="595" y="375" text-anchor="middle">HELTEC WIFI LORA 32 V3</text>
+    <text class="pcbtext" x="515" y="165">J3</text><text class="pcbtext" x="665" y="165">J2</text>
+    <g>
+      <!-- J3 and J2, pin 18 at top, pin 1 at bottom -->
+      <circle class="pad" cx="510" cy="190" r="7"/><circle class="pad" cx="680" cy="190" r="7"/>
+      <circle class="pad" cx="510" cy="210" r="7"/><circle class="pad" cx="680" cy="210" r="7"/>
+      <circle class="pad" cx="510" cy="230" r="7"/><circle class="pad" cx="680" cy="230" r="7"/>
+      <circle class="pad" cx="510" cy="250" r="7"/><circle class="pad" cx="680" cy="250" r="7"/>
+      <circle class="pad" cx="510" cy="270" r="7"/><circle class="pad" cx="680" cy="270" r="7"/>
+      <circle class="pad" cx="510" cy="290" r="7"/><circle class="pad" cx="680" cy="290" r="7"/>
+      <circle class="pad" cx="510" cy="310" r="7"/><circle class="pad" cx="680" cy="310" r="7"/>
+      <circle class="pad" cx="510" cy="330" r="7"/><circle class="pad" cx="680" cy="330" r="7"/>
+      <circle class="pad" cx="510" cy="350" r="7"/><circle class="pad" cx="680" cy="350" r="7"/>
+      <circle class="pad" cx="510" cy="370" r="7"/><circle class="pad" cx="680" cy="370" r="7"/>
+      <circle class="pad" cx="510" cy="390" r="7"/><circle class="pad" cx="680" cy="390" r="7"/>
+      <circle class="pad" cx="510" cy="410" r="7"/><circle class="pad" cx="680" cy="410" r="7"/>
+      <circle class="pad" cx="510" cy="430" r="7"/><circle class="pad" cx="680" cy="430" r="7"/>
+      <circle class="pad" cx="510" cy="450" r="7"/><circle class="pad" cx="680" cy="450" r="7"/>
+      <circle class="pad" cx="510" cy="470" r="7"/><circle class="pad" cx="680" cy="470" r="7"/>
+      <circle class="pad" cx="510" cy="490" r="7"/><circle class="pad" cx="680" cy="490" r="7"/>
+      <circle class="pad" cx="510" cy="510" r="7"/><circle class="pad" cx="680" cy="510" r="7"/>
+      <rect class="pad" x="503" y="523" width="14" height="14" rx="2"/><circle class="pad" cx="680" cy="530" r="7"/>
+    </g>
+
+    <!-- F.Cu signal routing -->
+    <path class="copper" d="M102 300H195M251 300H275V270H300"/>
+    <path class="copper" d="M102 335H195M251 335H275V300H300"/>
+    <path class="copper" d="M102 370H195M251 370H275V330H300"/>
+    <path class="copper" d="M410 300H455V250H510"/>
+    <path class="copper" d="M410 330H465V230H510"/>
+    <path class="copper" d="M410 360H475V210H510"/>
+    <!-- 3V3 -->
+    <path class="power" d="M300 240H410M410 240H445M445 240H480V490H510M480 490V510H510"/>
+    <!-- Ground and control -->
+    <path class="ground" d="M102 405H280V510H300M300 360V510M410 270H445M410 270V530H510"/>
+    <text class="pcbtext" x="442" y="195">J3-17 GPIO6</text>
+    <text class="pcbtext" x="442" y="220">J3-16 GPIO5</text>
+    <text class="pcbtext" x="442" y="245">J3-15 GPIO4</text>
+  </g>
+
+  <!-- BOTTOM BOARD -->
+  <g id="bottom-board">
+    <rect class="mask" x="850" y="145" width="690" height="450" rx="12"/>
+    <rect class="plane" x="865" y="160" width="660" height="420" rx="8"/>
+    <!-- Ground-plane keep-outs -->
+    <rect class="keepout" x="1305" y="180" width="160" height="65" rx="6"/>
+    <text class="pcbtext" x="1385" y="205" text-anchor="middle">No copper under antenna</text>
+    <!-- Mounting holes -->
+    <circle class="pad" cx="880" cy="175" r="15"/><circle class="hole" cx="880" cy="175" r="9"/>
+    <circle class="pad" cx="1510" cy="175" r="15"/><circle class="hole" cx="1510" cy="175" r="9"/>
+    <circle class="pad" cx="880" cy="565" r="15"/><circle class="hole" cx="880" cy="565" r="9"/>
+    <circle class="pad" cx="1510" cy="565" r="15"/><circle class="hole" cx="1510" cy="565" r="9"/>
+
+    <!-- Representative plated pads -->
+    <g>
+      <circle class="via" cx="892" cy="300" r="9"/><circle class="via" cx="892" cy="335" r="9"/><circle class="via" cx="892" cy="370" r="9"/><circle class="via" cx="892" cy="405" r="9"/>
+      <circle class="via" cx="1090" cy="240" r="8"/><circle class="via" cx="1090" cy="270" r="8"/><circle class="via" cx="1090" cy="300" r="8"/>
+      <circle class="via" cx="1090" cy="330" r="8"/><circle class="via" cx="1090" cy="360" r="8"/><circle class="via" cx="1090" cy="390" r="8"/>
+      <circle class="via" cx="1300" cy="190" r="7"/><circle class="via" cx="1300" cy="210" r="7"/><circle class="via" cx="1300" cy="230" r="7"/>
+      <circle class="via" cx="1300" cy="250" r="7"/><circle class="via" cx="1300" cy="490" r="7"/><circle class="via" cx="1300" cy="510" r="7"/><circle class="via" cx="1300" cy="530" r="7"/>
+      <circle class="via" cx="1470" cy="190" r="7"/><circle class="via" cx="1470" cy="530" r="7"/>
+    </g>
+
+    <!-- Ground stitching -->
+    <g>
+      <circle class="via" cx="940" cy="190" r="5"/><circle class="via" cx="1000" cy="190" r="5"/><circle class="via" cx="1060" cy="190" r="5"/>
+      <circle class="via" cx="940" cy="550" r="5"/><circle class="via" cx="1000" cy="550" r="5"/><circle class="via" cx="1060" cy="550" r="5"/>
+      <circle class="via" cx="1160" cy="190" r="5"/><circle class="via" cx="1160" cy="550" r="5"/>
+      <circle class="via" cx="1230" cy="190" r="5"/><circle class="via" cx="1230" cy="550" r="5"/>
+      <circle class="via" cx="1500" cy="270" r="5"/><circle class="via" cx="1500" cy="330" r="5"/><circle class="via" cx="1500" cy="390" r="5"/><circle class="via" cx="1500" cy="450" r="5"/>
+    </g>
+
+    <path class="ground" d="M892 405H1040V510H1090M1090 360V510M1470 530H1400V555H1090"/>
+    <text class="pcbtext" x="1195" y="370" text-anchor="middle">CONTINUOUS GND PLANE</text>
+    <text class="pcbtext" x="1195" y="398" text-anchor="middle">stitch near J1, U1 and both Heltec ground pins</text>
+    <text class="pcbtext" x="1195" y="430" text-anchor="middle">keep BCLK / LRCLK / DATA on F.Cu over solid ground</text>
+  </g>
+
+  <!-- Legend and fabrication notes -->
+  <rect class="note" x="60" y="705" width="950" height="285" rx="12"/>
+  <text class="head" x="85" y="742">PCB design rules</text>
+  <text class="small" x="85" y="778">1. Use the official Heltec 2 x 18 mechanical drawing: 2.54 mm pitch, 22.86 mm row spacing, USB-C at the board edge.</text>
+  <text class="small" x="85" y="812">2. Route BCLK, LRCLK and DATA as short point-to-point traces over uninterrupted ground; avoid vias and antenna/USB areas.</text>
+  <text class="small" x="85" y="846">3. Place C1 within 5 mm of U1 pins 20/19. Connect DIR to 3V3, /OE to GND, A4-A8 to GND, and leave B4-B8 open.</text>
+  <text class="small" x="85" y="880">4. Socket both U1 and the Heltec. Use a keyed 1 x 4 NAD connector with pin 1 = BCLK and pin 4 = DGND.</text>
+  <text class="small" x="85" y="914">5. Before fabrication: capture the schematic, assign verified footprints, run ERC/DRC, inspect Gerbers, and print a 1:1 paper fit check.</text>
+  <text class="small" x="85" y="948">6. Keep mounting-hole copper clear and maintain at least 3 mm mechanical clearance from the NAD chassis and existing assemblies.</text>
+
+  <rect class="warn" x="1040" y="705" width="500" height="285" rx="12"/>
+  <text class="head" x="1290" y="742" text-anchor="middle">Not fabrication-ready</text>
+  <text class="small" x="1070" y="785">This drawing records placement and routing intent.</text>
+  <text class="small" x="1070" y="819">It is not a Gerber set and has not passed KiCad DRC.</text>
+  <text class="small" x="1070" y="853">Verify the purchased socket footprints against the</text>
+  <text class="small" x="1070" y="887">physical Heltec before ordering a PCB.</text>
+  <text class="small" x="1070" y="931">Validated power remains USB only. No NAD power rail</text>
+  <text class="small" x="1070" y="965">is present on this carrier board.</text>
+</svg>

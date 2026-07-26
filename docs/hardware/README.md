@@ -9,6 +9,7 @@ before beginning.
 - [Electrical schematic](circuit-schematic.svg)
 - [Suggested vero-board layout](vero-board-layout.svg)
 - [Integrated Heltec vero-board layout](vero-board-integrated-heltec.svg)
+- [Heltec carrier PCB reference layout](pcb-layout-heltec-carrier.svg)
 - [Firmware signal map](../../firmware/heltec-v3/main/board.hpp)
 
 ## Parts
@@ -43,6 +44,13 @@ must remain accessible and the antenna end must not be screened by the NAD
 chassis or other boards.
 
 ![Integrated Heltec vero-board layout](vero-board-integrated-heltec.svg)
+
+The breadboard below is the working development arrangement that preceded the
+vero-board and PCB layouts. It is useful for confirming the Heltec and
+74LVC245 package orientation, but the temporary aerial lead and breadboard
+contacts are not suitable for permanent installation.
+
+<img src="photos/heltec-breadboard-prototype.jpg" alt="Heltec V3 and 74LVC245 on the prototype breadboard" width="52%">
 
 ### Recommended new board — Seeed Studio XIAO ESP32S3
 
@@ -82,6 +90,13 @@ References:
 
 U302 is the Burr-Brown/TI PCM1732U DAC on the underside of the NAD main board.
 Pin 1 is identified by the package dot.
+
+The first photograph shows the PCM1732U package and its pin-1 dot before
+wiring. The second records the working prototype colours: white on pin 1,
+yellow on pin 2, blue on pin 3, and black on pin 7.
+
+<img src="photos/u302-pcm1732u-reference.jpg" alt="Close view of NAD U302 PCM1732U showing the pin-1 dot" width="47%">
+<img src="photos/u302-wired-taps.jpg" alt="Colour-coded prototype wires soldered to U302" width="47%">
 
 | U302 pin | Signal | Wire colour used in prototype |
 |---:|---|---|
@@ -169,9 +184,53 @@ Fit the two female socket strips to the Heltec while tacking their corner pins.
 Remove the module before completing the socket joints. Keep the USB-C connector
 accessible and check the height of the socketed assembly against the NAD lid.
 
+## Printed circuit board layout
+
+The PCB drawing turns the validated Heltec/74LVC245 circuit into a suggested
+two-layer carrier:
+
+- 92 × 60 mm, 1.6 mm FR-4;
+- socketed DIP-20 buffer and two socketed 1 × 18 Heltec headers;
+- keyed 1 × 4 NAD input connector;
+- short top-layer BCLK/LRCLK/DATA traces over a continuous bottom ground plane;
+- antenna and USB keep-outs;
+- four M3 mounting holes; and
+- ground stitching around the input, buffer and Heltec ground pins.
+
+![Heltec carrier PCB reference layout](pcb-layout-heltec-carrier.svg)
+
+The NAD connector pinout is:
+
+| J1 pin | Signal | Prototype colour |
+|---:|---|---|
+| 1 | BCLK / U302 pin 3 | Blue |
+| 2 | LRCLK / U302 pin 1 | White |
+| 3 | DATA / U302 pin 2 | Yellow |
+| 4 | DGND / U302 pin 7 | Black |
+
+This is a placement and routing reference, **not fabrication-ready Gerber
+data**. Before ordering boards it must be captured in KiCad or equivalent,
+assigned to the exact purchased socket and connector footprints, checked
+against a physical Heltec, and pass ERC, DRC, Gerber inspection and a 1:1 paper
+fit test. The first PCB revision should be treated as a prototype.
+
+The interior photograph below shows why the paper fit and lid/transport
+clearance checks matter. Keep the carrier away from the mains inlet,
+transformer, transport mechanism, ribbon cables and analogue output section.
+
+<img src="photos/nad-c541i-interior-overview.jpg" alt="Interior overview of the NAD C541i" width="58%">
+
 ## Power
 
 For the validated installation, continue powering the Heltec through USB.
+
+The photographs identify the existing regulator area and the main-board digital
+power links. They are included for orientation only: they do not establish a
+safe source for the new board and are not permission to tap `D+5V`, `A+12V` or
+either regulator.
+
+<img src="photos/nad-power-regulators.jpg" alt="Close view of the NAD regulator and relay area" width="47%">
+<img src="photos/nad-digital-power-links.jpg" alt="NAD main-board digital power links and nearby circuitry" width="47%">
 
 Do not connect NAD `D+5V` to the Heltec and do not install a 7805 directly from
 an unidentified rail. A permanent internal supply needs:

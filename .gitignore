@@ -12,5 +12,5 @@ config/local.json
 .pio/
 firmware/heltec-v3/sdkconfig
 firmware/heltec-v3/sdkconfig.old
-firmware/heltec-v3/sdkconfig.*
+firmware/heltec-v3/sdkconfig.heltec-v3
 firmware/heltec-v3/managed_components/

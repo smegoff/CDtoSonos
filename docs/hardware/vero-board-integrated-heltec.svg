@@ -1,0 +1,164 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1120" viewBox="0 0 1600 1120" role="img" aria-labelledby="title desc">
+  <title id="title">Integrated Heltec V3 and 74LVC245 vero-board layout</title>
+  <desc id="desc">Component-side placement plan for a 32 by 24 hole stripboard. It shows a socketed Heltec WiFi LoRa 32 V3, a socketed SN74LVC245AN, input resistors, decoupling, copper cuts, NAD signal pads, and insulated signal links.</desc>
+  <defs>
+    <pattern id="holes" width="30" height="30" patternUnits="userSpaceOnUse">
+      <circle cx="15" cy="15" r="4.5" fill="#5f4328" stroke="#2e241b" stroke-width="1.2"/>
+    </pattern>
+    <style>
+      .bg{fill:#eee8dc}.board{fill:#d4af75;stroke:#3e3021;stroke-width:4}.track{stroke:#ad7330;stroke-width:8;opacity:.45}
+      .title{font:bold 32px Arial,sans-serif;fill:#28231e}.subtitle{font:19px Arial,sans-serif;fill:#50483f}
+      .label{font:bold 20px Arial,sans-serif;fill:#28231e}.text{font:18px Arial,sans-serif;fill:#332d27}.small{font:15px Arial,sans-serif;fill:#4f473e}
+      .chip{fill:#262626;stroke:#080808;stroke-width:3}.heltec{fill:#f4f4f1;stroke:#272727;stroke-width:4}.oled{fill:#15191d;stroke:#555;stroke-width:3}
+      .socket{fill:none;stroke:#191919;stroke-width:6}.pin{fill:#d6d0c4;stroke:#111;stroke-width:2}.cut{fill:#f7efe2;stroke:#b52a26;stroke-width:4}
+      .wire{fill:none;stroke-width:7;stroke-linecap:round;stroke-linejoin:round}.thin{fill:none;stroke-width:4;stroke-linecap:round;stroke-linejoin:round}
+      .blue{stroke:#1476c4}.white{stroke:#fffdf4}.yellow{stroke:#e3b600}.green{stroke:#18804a}.black{stroke:#222}.red{stroke:#bd332b}
+      .res{fill:#e5c88e;stroke:#3c3024;stroke-width:2}.note{fill:#fff7e8;stroke:#765d3b;stroke-width:2}.warn{fill:#fff0cd;stroke:#a76300;stroke-width:2}
+    </style>
+  </defs>
+
+  <rect class="bg" width="1600" height="1120"/>
+  <text class="title" x="800" y="45" text-anchor="middle">Integrated Heltec V3 + 74LVC245 vero-board</text>
+  <text class="subtitle" x="800" y="76" text-anchor="middle">Component side - 32 columns x 24 rows - horizontal copper strips - not a drill template</text>
+
+  <rect class="board" x="110" y="125" width="960" height="720" rx="12"/>
+  <g>
+    <path class="track" d="M122 140H1058"/><path class="track" d="M122 170H1058"/><path class="track" d="M122 200H1058"/>
+    <path class="track" d="M122 230H1058"/><path class="track" d="M122 260H1058"/><path class="track" d="M122 290H1058"/>
+    <path class="track" d="M122 320H1058"/><path class="track" d="M122 350H1058"/><path class="track" d="M122 380H1058"/>
+    <path class="track" d="M122 410H1058"/><path class="track" d="M122 440H1058"/><path class="track" d="M122 470H1058"/>
+    <path class="track" d="M122 500H1058"/><path class="track" d="M122 530H1058"/><path class="track" d="M122 560H1058"/>
+    <path class="track" d="M122 590H1058"/><path class="track" d="M122 620H1058"/><path class="track" d="M122 650H1058"/>
+    <path class="track" d="M122 680H1058"/><path class="track" d="M122 710H1058"/><path class="track" d="M122 740H1058"/>
+    <path class="track" d="M122 770H1058"/><path class="track" d="M122 800H1058"/><path class="track" d="M122 830H1058"/>
+  </g>
+  <rect x="110" y="125" width="960" height="720" fill="url(#holes)" opacity=".88"/>
+
+  <text class="small" x="125" y="875">Column 1</text>
+  <text class="small" x="980" y="875">Column 32</text>
+  <text class="small" x="72" y="145" text-anchor="end">Row 1</text>
+  <text class="small" x="72" y="835" text-anchor="end">Row 24</text>
+
+  <!-- NAD pads and series resistors -->
+  <circle class="pin" cx="140" cy="260" r="11" fill="#1476c4"/><text class="label" x="160" y="251">BCLK</text><text class="small" x="160" y="271">blue - U302 pin 3</text>
+  <circle class="pin" cx="140" cy="320" r="11" fill="#fffdf4"/><text class="label" x="160" y="311">LRCLK</text><text class="small" x="160" y="331">white - U302 pin 1</text>
+  <circle class="pin" cx="140" cy="380" r="11" fill="#e3b600"/><text class="label" x="160" y="371">DATA</text><text class="small" x="160" y="391">yellow - U302 pin 2</text>
+  <circle class="pin" cx="140" cy="800" r="11" fill="#222"/><text class="label" x="160" y="793">DGND</text><text class="small" x="160" y="813">black - U302 pin 7</text>
+
+  <path class="wire blue" d="M140 260H230"/><rect class="res" x="230" y="244" width="105" height="32" rx="6"/><text class="small" x="282" y="265" text-anchor="middle">1 k ohm</text>
+  <path class="wire white" d="M140 320H230"/><rect class="res" x="230" y="304" width="105" height="32" rx="6"/><text class="small" x="282" y="325" text-anchor="middle">1 k ohm</text>
+  <path class="wire yellow" d="M140 380H230"/><rect class="res" x="230" y="364" width="105" height="32" rx="6"/><text class="small" x="282" y="385" text-anchor="middle">1 k ohm</text>
+
+  <!-- Socketed 74LVC245 -->
+  <rect class="socket" x="342" y="214" width="126" height="332" rx="8"/>
+  <rect class="chip" x="355" y="228" width="100" height="304" rx="8"/>
+  <path d="M383 228a22 14 0 0 0 44 0" fill="#d4af75"/>
+  <circle cx="372" cy="245" r="6" fill="#edcf3f"/>
+  <text x="405" y="390" text-anchor="middle" transform="rotate(-90 405 390)" style="font:bold 20px Arial,sans-serif;fill:#f5efe6">SN74LVC245AN</text>
+  <g>
+    <circle class="pin" cx="350" cy="230" r="8"/><circle class="pin" cx="470" cy="230" r="8"/>
+    <circle class="pin" cx="350" cy="260" r="8"/><circle class="pin" cx="470" cy="260" r="8"/>
+    <circle class="pin" cx="350" cy="290" r="8"/><circle class="pin" cx="470" cy="290" r="8"/>
+    <circle class="pin" cx="350" cy="320" r="8"/><circle class="pin" cx="470" cy="320" r="8"/>
+    <circle class="pin" cx="350" cy="350" r="8"/><circle class="pin" cx="470" cy="350" r="8"/>
+    <circle class="pin" cx="350" cy="380" r="8"/><circle class="pin" cx="470" cy="380" r="8"/>
+    <circle class="pin" cx="350" cy="410" r="8"/><circle class="pin" cx="470" cy="410" r="8"/>
+    <circle class="pin" cx="350" cy="440" r="8"/><circle class="pin" cx="470" cy="440" r="8"/>
+    <circle class="pin" cx="350" cy="470" r="8"/><circle class="pin" cx="470" cy="470" r="8"/>
+    <circle class="pin" cx="350" cy="500" r="8"/><circle class="pin" cx="470" cy="500" r="8"/>
+  </g>
+  <g>
+    <circle class="cut" cx="410" cy="230" r="10"/><circle class="cut" cx="410" cy="260" r="10"/>
+    <circle class="cut" cx="410" cy="290" r="10"/><circle class="cut" cx="410" cy="320" r="10"/>
+    <circle class="cut" cx="410" cy="350" r="10"/><circle class="cut" cx="410" cy="380" r="10"/>
+    <circle class="cut" cx="410" cy="410" r="10"/><circle class="cut" cx="410" cy="440" r="10"/>
+    <circle class="cut" cx="410" cy="470" r="10"/><circle class="cut" cx="410" cy="500" r="10"/>
+  </g>
+  <path class="wire blue" d="M335 260H350"/>
+  <path class="wire white" d="M335 320H340V290H350"/>
+  <path class="wire yellow" d="M335 380H325V320H350"/>
+
+  <!-- Heltec body and two 18-way socket strips -->
+  <rect class="socket" x="678" y="196" width="300" height="570" rx="10"/>
+  <rect class="heltec" x="706" y="210" width="244" height="542" rx="14"/>
+  <rect x="765" y="690" width="126" height="62" rx="7" fill="#bebebe" stroke="#333" stroke-width="3"/>
+  <rect class="oled" x="744" y="330" width="168" height="235" rx="8"/>
+  <text class="small" x="828" y="450" fill="#e8f0f2" text-anchor="middle">OLED</text>
+  <text class="label" x="828" y="610" text-anchor="middle">Heltec WiFi LoRa 32 V3</text>
+  <text class="small" x="828" y="635" text-anchor="middle">socketed on two 1 x 18 headers</text>
+  <text class="small" x="828" y="725" text-anchor="middle">USB-C faces board edge</text>
+  <text class="label" x="680" y="190" text-anchor="middle">J3</text>
+  <text class="label" x="980" y="190" text-anchor="middle">J2</text>
+  <g>
+    <circle class="pin" cx="680" cy="215" r="8"/><circle class="pin" cx="980" cy="215" r="8"/>
+    <circle class="pin" cx="680" cy="245" r="8"/><circle class="pin" cx="980" cy="245" r="8"/>
+    <circle class="pin" cx="680" cy="275" r="8"/><circle class="pin" cx="980" cy="275" r="8"/>
+    <circle class="pin" cx="680" cy="305" r="8"/><circle class="pin" cx="980" cy="305" r="8"/>
+    <circle class="pin" cx="680" cy="335" r="8"/><circle class="pin" cx="980" cy="335" r="8"/>
+    <circle class="pin" cx="680" cy="365" r="8"/><circle class="pin" cx="980" cy="365" r="8"/>
+    <circle class="pin" cx="680" cy="395" r="8"/><circle class="pin" cx="980" cy="395" r="8"/>
+    <circle class="pin" cx="680" cy="425" r="8"/><circle class="pin" cx="980" cy="425" r="8"/>
+    <circle class="pin" cx="680" cy="455" r="8"/><circle class="pin" cx="980" cy="455" r="8"/>
+    <circle class="pin" cx="680" cy="485" r="8"/><circle class="pin" cx="980" cy="485" r="8"/>
+    <circle class="pin" cx="680" cy="515" r="8"/><circle class="pin" cx="980" cy="515" r="8"/>
+    <circle class="pin" cx="680" cy="545" r="8"/><circle class="pin" cx="980" cy="545" r="8"/>
+    <circle class="pin" cx="680" cy="575" r="8"/><circle class="pin" cx="980" cy="575" r="8"/>
+    <circle class="pin" cx="680" cy="605" r="8"/><circle class="pin" cx="980" cy="605" r="8"/>
+    <circle class="pin" cx="680" cy="635" r="8"/><circle class="pin" cx="980" cy="635" r="8"/>
+    <circle class="pin" cx="680" cy="665" r="8"/><circle class="pin" cx="980" cy="665" r="8"/>
+    <circle class="pin" cx="680" cy="695" r="8"/><circle class="pin" cx="980" cy="695" r="8"/>
+    <circle class="pin" cx="680" cy="725" r="8"/><circle class="pin" cx="980" cy="725" r="8"/>
+  </g>
+  <g>
+    <circle class="cut" cx="830" cy="215" r="10"/><circle class="cut" cx="830" cy="245" r="10"/>
+    <circle class="cut" cx="830" cy="275" r="10"/><circle class="cut" cx="830" cy="305" r="10"/>
+    <circle class="cut" cx="830" cy="335" r="10"/><circle class="cut" cx="830" cy="365" r="10"/>
+    <circle class="cut" cx="830" cy="395" r="10"/><circle class="cut" cx="830" cy="425" r="10"/>
+    <circle class="cut" cx="830" cy="455" r="10"/><circle class="cut" cx="830" cy="485" r="10"/>
+    <circle class="cut" cx="830" cy="515" r="10"/><circle class="cut" cx="830" cy="545" r="10"/>
+    <circle class="cut" cx="830" cy="575" r="10"/><circle class="cut" cx="830" cy="605" r="10"/>
+    <circle class="cut" cx="830" cy="635" r="10"/><circle class="cut" cx="830" cy="665" r="10"/>
+    <circle class="cut" cx="830" cy="695" r="10"/><circle class="cut" cx="830" cy="725" r="10"/>
+  </g>
+
+  <!-- Exact J3 links with USB-C at the bottom as drawn. -->
+  <path class="wire blue" d="M470 290H540V305H680"/><text class="small" x="670" y="299" text-anchor="end">GPIO 4 - J3 pin 15</text>
+  <path class="wire white" d="M470 320H565V275H680"/><text class="small" x="670" y="269" text-anchor="end">GPIO 5 - J3 pin 16</text>
+  <path class="wire yellow" d="M470 350H590V245H680"/><text class="small" x="670" y="239" text-anchor="end">GPIO 6 - J3 pin 17</text>
+  <path class="wire green" d="M470 230H515V190H625V665H680"/><text class="small" x="670" y="659" text-anchor="end">3V3 - J3 pin 3</text>
+  <path class="wire black" d="M350 500V800H620V725H680"/><text class="small" x="670" y="719" text-anchor="end">GND - J3 pin 1</text>
+
+  <!-- Control and decoupling -->
+  <path class="thin green" d="M350 230H470"/>
+  <path class="thin black" d="M470 260H520V800"/>
+  <path class="thin black" d="M350 350V500"/>
+  <path class="thin red" d="M500 230V244M490 244H510M490 254H510M500 254V260"/>
+
+  <!-- Notes -->
+  <rect class="note" x="1110" y="125" width="440" height="260" rx="12"/>
+  <text class="label" x="1135" y="160">Mechanical rules</text>
+  <text class="text" x="1135" y="198">- Use two 1 x 18 female socket strips.</text>
+  <text class="text" x="1135" y="232">- Keep USB-C accessible at the board edge.</text>
+  <text class="text" x="1135" y="266">- Keep the Wi-Fi antenna end unobstructed.</text>
+  <text class="text" x="1135" y="300">- Support the board on insulated standoffs.</text>
+  <text class="text" x="1135" y="334">- Confirm NAD lid clearance before soldering.</text>
+  <text class="small" x="1135" y="365">100 nF: pins 20/19; DIR high; /OE and A4-A8 low.</text>
+
+  <rect class="note" x="1110" y="415" width="440" height="285" rx="12"/>
+  <text class="label" x="1135" y="450">Copper-side cuts</text>
+  <circle class="cut" cx="1140" cy="490" r="10"/><text class="text" x="1165" y="497">10 between DIP socket pin rows</text>
+  <circle class="cut" cx="1140" cy="530" r="10"/><text class="text" x="1165" y="537">18 between Heltec socket rows</text>
+  <circle class="cut" cx="1140" cy="570" r="10"/><text class="text" x="1165" y="577">3 beneath the input resistors</text>
+  <text class="text" x="1135" y="615">Also isolate strips wherever your physical</text>
+  <text class="text" x="1135" y="647">routing differs. Test every cut before power.</text>
+
+  <rect class="warn" x="1110" y="730" width="440" height="115" rx="12"/>
+  <text class="label" x="1330" y="765" text-anchor="middle">Power warning</text>
+  <text class="text" x="1330" y="800" text-anchor="middle">USB power only for the validated build.</text>
+  <text class="text" x="1330" y="830" text-anchor="middle">Do not connect any NAD power rail.</text>
+
+  <rect class="note" x="110" y="915" width="1440" height="145" rx="12"/>
+  <text class="label" x="135" y="950">Before soldering the Heltec sockets</text>
+  <text class="text" x="135" y="988">Temporarily fit both socket strips to the Heltec, place the assembly squarely on the vero board, then tack one pin at each corner.</text>
+  <text class="text" x="135" y="1024">Remove the Heltec before completing the joints. This keeps both header rows parallel and avoids heat or mechanical stress on the module.</text>
+</svg>

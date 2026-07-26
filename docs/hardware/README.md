@@ -8,6 +8,7 @@ before beginning.
 
 - [Electrical schematic](circuit-schematic.svg)
 - [Suggested vero-board layout](vero-board-layout.svg)
+- [Integrated Heltec vero-board layout](vero-board-integrated-heltec.svg)
 - [Firmware signal map](../../firmware/heltec-v3/main/board.hpp)
 
 ## Parts
@@ -19,13 +20,63 @@ before beginning.
 | 3 | 1 kΩ resistor | Series protection for BCLK, LRCLK and DATA |
 | 1 | 100 nF ceramic capacitor | Directly between buffer VCC and GND |
 | 1 | DIP-20 socket | Strongly recommended |
-| 1 | Stripboard/veroboard | 2.54 mm pitch, at least 18 × 14 holes |
-| 2 | Header strips/sockets | For removable Heltec connections |
+| 1 | Stripboard/veroboard | 2.54 mm pitch; 18 × 14 buffer-only or 32 × 24 integrated |
+| 2 | 1 × 18 female socket strips | For a removable Heltec on the integrated board |
 | — | 26–28 AWG insulated wire | Keep digital signal leads short |
 | — | Heat-shrink and standoffs | Insulation and mechanical support |
 
 The optional `EMPH` input is not required for audio capture and is omitted from
 this verified build.
+
+## ESP32 board choices
+
+### Heltec WiFi LoRa 32 V3 — validated low-cost option
+
+The Heltec V3 remains the currently supported and validated board. It is a good
+cheap choice when you already have one, and its OLED makes installation and
+network diagnosis much easier. The firmware holds the unused SX1262 LoRa radio
+in reset before Wi-Fi starts.
+
+For a single-board assembly, use a larger stripboard of at least 32 × 24 holes
+and mount the Heltec in two 1 × 18 female socket strips. The USB-C connector
+must remain accessible and the antenna end must not be screened by the NAD
+chassis or other boards.
+
+![Integrated Heltec vero-board layout](vero-board-integrated-heltec.svg)
+
+### Recommended new board — Seeed Studio XIAO ESP32S3
+
+For a future clean build, the recommended controller is the **plain Seeed
+Studio XIAO ESP32S3**, not the Sense/camera version. It is only 21 × 17.8 mm,
+has a dual-core 240 MHz ESP32-S3, 8 MB flash, 8 MB PSRAM, Wi-Fi, and no unused
+LoRa radio. It is inexpensive and available from Australian suppliers that
+ship to New Zealand.
+
+It also exposes the three required signals conveniently:
+
+| CDtoSonos signal | XIAO label | ESP32-S3 GPIO |
+|---|---|---:|
+| BCLK | D3 | 4 |
+| LRCLK | D4 | 5 |
+| DATA | D5 | 6 |
+| Buffer supply | 3V3 | — |
+| Common ground | GND | — |
+
+The extra PSRAM gives a future board profile room for a substantially deeper
+audio buffer. An external I²C SSD1306 OLED can be added if a local display is
+wanted.
+
+**Firmware status:** the repository currently builds and flashes the validated
+Heltec V3 profile. Do not flash that image onto a XIAO yet: the LoRa guard,
+OLED, power control, partition settings, and PlatformIO board definition must
+first be separated into a XIAO-specific profile. The PCM GPIO assignment itself
+can remain 4/5/6.
+
+References:
+
+- [Heltec V3 specifications and official pin map](https://heltec.org/project/wifi-lora-32-v3/)
+- [Seeed XIAO ESP32S3 specifications and pin map](https://wiki.seeedstudio.com/xiao_esp32s3_getting_started/)
+- [Core Electronics Australia — XIAO ESP32S3](https://core-electronics.com.au/seeed-studio-xiao-esp32s3.html)
 
 ## NAD tap points
 
@@ -89,6 +140,34 @@ The drawing is a suggested compact daughterboard, not a drill template. Confirm
 the actual strip direction, hole numbering and available space before cutting.
 Mount the assembly on insulated standoffs with the copper side unable to touch
 the NAD chassis or existing boards.
+
+### Integrated Heltec layout
+
+The integrated drawing places both the buffer and the complete Heltec module on
+one 32 × 24 hole board. It needs:
+
+1. Ten cuts between the two DIP socket pin rows.
+2. Eighteen cuts between the two Heltec socket rows. Opposing Heltec pins must
+   never remain joined by a copper strip.
+3. Three input cuts beneath the 1 kΩ series resistors.
+4. Additional cuts wherever the final physical link routing crosses a strip
+   that must remain isolated.
+
+Use insulated top-side links from buffer outputs B1/B2/B3 to the Heltec pins
+shown below. The drawing follows the official pinout orientation with USB-C at
+the bottom edge:
+
+| Connection | Heltec header |
+|---|---|
+| BCLK / GPIO 4 | J3 pin 15 |
+| LRCLK / GPIO 5 | J3 pin 16 |
+| DATA / GPIO 6 | J3 pin 17 |
+| 3V3 | J3 pin 3 |
+| GND | J3 pin 1 |
+
+Fit the two female socket strips to the Heltec while tacking their corner pins.
+Remove the module before completing the socket joints. Keep the USB-C connector
+accessible and check the height of the socketed assembly against the NAD lid.
 
 ## Power
 

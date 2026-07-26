@@ -18,6 +18,7 @@ constexpr char kTag[] = "audio";
 constexpr float kSilenceThresholdDbfs = -55.0F;
 constexpr float kPi = 3.14159265358979323846F;
 constexpr uint64_t kAnalysisIntervalBlocks = 16;
+constexpr uint32_t kClockLossTimeouts = 8;
 constexpr std::array<float, 16> kSpectrumFrequencies = {
     63.0F, 100.0F, 160.0F, 250.0F, 400.0F, 630.0F, 1000.0F, 1600.0F,
     2500.0F, 4000.0F, 6300.0F, 8000.0F, 10000.0F, 12500.0F, 16000.0F,
@@ -129,6 +130,7 @@ void AudioPipeline::capture_task() {
 
     auto& raw = raw_buffer_;
     size_t accumulated_bytes = 0;
+    uint32_t consecutive_empty_reads = 0;
     ESP_LOGI(kTag,
              "I2S RX ready: slave, right-justified, 44.1kHz, stereo, "
              "16-bit data in 24-bit slots");
@@ -161,8 +163,10 @@ void AudioPipeline::capture_task() {
 
         if (result == ESP_ERR_TIMEOUT && bytes_read == 0) {
             if (xSemaphoreTake(mutex_, pdMS_TO_TICKS(5)) == pdTRUE) {
-                metrics_.clock_locked = false;
                 ++metrics_.read_timeouts;
+                if (++consecutive_empty_reads >= kClockLossTimeouts) {
+                    metrics_.clock_locked = false;
+                }
                 xSemaphoreGive(mutex_);
             }
             continue;
@@ -175,6 +179,7 @@ void AudioPipeline::capture_task() {
 
         // ESP-IDF may return ESP_ERR_TIMEOUT after copying a valid partial DMA
         // buffer. Retain those bytes and complete the block on the next read.
+        consecutive_empty_reads = 0;
         accumulated_bytes += bytes_read;
         if (accumulated_bytes < sizeof(raw)) {
             continue;

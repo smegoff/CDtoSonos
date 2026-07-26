@@ -1,9 +1,168 @@
 #include "flac_encoder.hpp"
 
 #include <algorithm>
+#include <array>
 #include <cstring>
+#include <limits>
 
 namespace cdts {
+namespace {
+
+class BitWriter {
+public:
+    BitWriter(uint8_t* output, size_t capacity)
+        : output_(output), capacity_(capacity) {}
+
+    bool write(uint32_t value, uint8_t bits) {
+        for (int bit = bits - 1; bit >= 0; --bit) {
+            if (bytes_used() >= capacity_) return false;
+            if (((value >> bit) & 1U) != 0) {
+                output_[bit_position_ / 8] |=
+                    static_cast<uint8_t>(0x80U >> (bit_position_ % 8));
+            }
+            ++bit_position_;
+        }
+        return true;
+    }
+
+    bool unary(uint32_t zeros) {
+        if (static_cast<uint64_t>(bit_position_) + zeros + 1 >
+            static_cast<uint64_t>(capacity_) * 8) {
+            return false;
+        }
+        bit_position_ += zeros;
+        return write(1, 1);
+    }
+
+    void align() {
+        bit_position_ = (bit_position_ + 7U) & ~size_t{7U};
+    }
+
+    size_t bytes_used() const {
+        return (bit_position_ + 7U) / 8U;
+    }
+
+private:
+    uint8_t* output_;
+    size_t capacity_;
+    size_t bit_position_ = 0;
+};
+
+int32_t sample_at(const int16_t* interleaved,
+                  size_t frame,
+                  size_t channel) {
+    return interleaved[(frame * 2) + channel];
+}
+
+int32_t residual_at(const int16_t* interleaved,
+                    size_t frame,
+                    size_t channel,
+                    uint8_t order) {
+    const int32_t current = sample_at(interleaved, frame, channel);
+    if (order == 0) return current;
+    const int32_t previous = sample_at(interleaved, frame - 1, channel);
+    if (order == 1) return current - previous;
+    const int32_t previous2 = sample_at(interleaved, frame - 2, channel);
+    return current - (2 * previous) + previous2;
+}
+
+uint32_t fold_signed(int32_t value) {
+    return value >= 0 ? static_cast<uint32_t>(value) * 2U
+                      : static_cast<uint32_t>(-static_cast<int64_t>(value) *
+                                              2 - 1);
+}
+
+struct Predictor {
+    uint8_t order = 0;
+    uint8_t rice = 0;
+    uint64_t bits = std::numeric_limits<uint64_t>::max();
+};
+
+Predictor choose_predictor(const int16_t* interleaved,
+                           size_t frames,
+                           size_t channel) {
+    Predictor best;
+    for (uint8_t order = 0; order <= 2 && order < frames; ++order) {
+        const size_t residuals = frames - order;
+        uint64_t folded_sum = 0;
+        for (size_t frame = order; frame < frames; ++frame) {
+            folded_sum += fold_signed(
+                residual_at(interleaved, frame, channel, order));
+        }
+
+        // For a Laplacian residual distribution, log2(mean folded
+        // magnitude) is a close Rice-parameter estimate. This avoids trying
+        // all 15 parameters for every block on the ESP32-S3.
+        const uint64_t mean = folded_sum / residuals;
+        uint8_t rice = 0;
+        while (rice < 14 && (uint64_t{1} << (rice + 1)) <= mean) {
+            ++rice;
+        }
+
+        uint64_t bits = 8 + (static_cast<uint64_t>(order) * 16) + 10 +
+                        (static_cast<uint64_t>(residuals) * (rice + 1));
+        for (size_t frame = order; frame < frames; ++frame) {
+            const uint32_t folded =
+                fold_signed(residual_at(interleaved, frame, channel, order));
+            bits += folded >> rice;
+        }
+        if (bits < best.bits) {
+            best = {.order = order, .rice = rice, .bits = bits};
+        }
+    }
+    return best;
+}
+
+bool write_subframe(BitWriter& writer,
+                    const int16_t* interleaved,
+                    size_t frames,
+                    size_t channel) {
+    const Predictor predictor = choose_predictor(interleaved, frames, channel);
+    const uint64_t verbatim_bits = 8 + (static_cast<uint64_t>(frames) * 16);
+    if (predictor.bits >= verbatim_bits) {
+        if (!writer.write(0x02, 8)) return false;
+        for (size_t frame = 0; frame < frames; ++frame) {
+            if (!writer.write(
+                    static_cast<uint16_t>(
+                        sample_at(interleaved, frame, channel)),
+                    16)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    // Zero pad, FIXED subframe type (001xxx), predictor order, no wasted bits.
+    if (!writer.write(static_cast<uint8_t>(0x10U | (predictor.order << 1)),
+                      8)) {
+        return false;
+    }
+    for (size_t frame = 0; frame < predictor.order; ++frame) {
+        if (!writer.write(
+                static_cast<uint16_t>(sample_at(interleaved, frame, channel)),
+                16)) {
+            return false;
+        }
+    }
+
+    // Rice residual coding method 0, one partition, selected 4-bit parameter.
+    if (!writer.write(0, 2) || !writer.write(0, 4) ||
+        !writer.write(predictor.rice, 4)) {
+        return false;
+    }
+    for (size_t frame = predictor.order; frame < frames; ++frame) {
+        const uint32_t folded =
+            fold_signed(residual_at(interleaved, frame, channel,
+                                    predictor.order));
+        if (!writer.unary(folded >> predictor.rice) ||
+            !writer.write(folded, predictor.rice)) {
+            return false;
+        }
+    }
+    return true;
+}
+
+}  // namespace
 
 FlacEncoder::FlacEncoder(uint32_t sample_rate, uint16_t block_samples)
     : sample_rate_(sample_rate), block_samples_(block_samples) {}
@@ -128,16 +287,19 @@ size_t FlacEncoder::encode_stereo_16(const int16_t* interleaved,
     *p = crc8(output, static_cast<size_t>(p - output));
     ++p;
 
-    // Verbatim subframes retain every source bit and avoid a large encoder.
+    // Fixed predictors with Rice-coded residuals remain bit-perfect while
+    // materially reducing Wi-Fi traffic. Incompressible blocks fall back to
+    // verbatim subframes.
+    const size_t prefix_size = static_cast<size_t>(p - output);
+    std::memset(p, 0, capacity - prefix_size);
+    BitWriter writer(p, capacity - prefix_size - 2);
     for (size_t channel = 0; channel < 2; ++channel) {
-        *p++ = 0x02;  // Zero pad, VERBATIM subframe type, no wasted bits.
-        for (size_t frame = 0; frame < sample_frames; ++frame) {
-            const uint16_t sample =
-                static_cast<uint16_t>(interleaved[(frame * 2) + channel]);
-            write_be16(p, sample);
-            p += 2;
+        if (!write_subframe(writer, interleaved, sample_frames, channel)) {
+            return 0;
         }
     }
+    writer.align();
+    p += writer.bytes_used();
 
     const uint16_t checksum = crc16(output, static_cast<size_t>(p - output));
     write_be16(p, checksum);

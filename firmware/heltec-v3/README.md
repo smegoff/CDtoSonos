@@ -29,7 +29,9 @@ Before Wi-Fi, I2S or any service starts:
 ## Runtime behaviour
 
 - Receives native stereo, 16-bit right-justified PCM in 24-bit slots.
-- Serves a continuous `audio/flac` stream on port 8000.
+- Serves a continuous, bit-perfect `audio/flac` stream on port 8000.
+- Uses lightweight fixed-predictor/Rice FLAC coding to reduce Wi-Fi traffic
+  without changing any captured PCM sample.
 - Discovers Sonos topology after Wi-Fi connects.
 - Saves the selected coordinator UUID/IP/name in NVS.
 - Starts after 1.5 seconds of sustained audio.

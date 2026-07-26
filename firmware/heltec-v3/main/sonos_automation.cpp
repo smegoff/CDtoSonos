@@ -231,6 +231,10 @@ void SonosAutomation::task() {
             const bool client_missing =
                 current.play_commanded && lossless_.clients() == 0;
             const bool needs_play = !current.play_commanded || client_missing;
+            if (current.play_commanded && !client_missing &&
+                current.state != "streaming") {
+                set_state("streaming");
+            }
             if (current.group_selected && needs_play &&
                 now - audio_since >= kAudioQualificationUs &&
                 now - last_play_attempt >= kPlaybackRetryUs) {

@@ -132,6 +132,10 @@ NAD logic level while its outputs are correct for the ESP32-S3.
 | 19, /OE | Ground, permanently enables outputs |
 | 20, VCC | Heltec 3.3 V |
 
+**Do not ground pin 4.** Pin 4 is the buffered DATA input. On the revision-A
+vero layout, the bare ground link starts at pin 5 and continues through pins
+5–10 only. Check this with the IC removed before applying power.
+
 Fit the 100 nF capacitor between pins 20 and 19 at the IC socket. Keep it as
 close to the pins as possible.
 

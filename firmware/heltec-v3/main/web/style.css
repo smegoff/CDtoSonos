@@ -60,12 +60,76 @@ h2 { margin-bottom: 18px; font-weight: 500; }
 .visual-toggle button { margin: 0; padding: 7px 11px; border-color: transparent; background: transparent; color: var(--muted); }
 .visual-toggle button[aria-pressed="true"] { background: var(--amber); color: #17110a; }
 .visual-view[hidden] { display: none !important; }
-#spectrum { width: 100%; height: 170px; display: block; margin: 12px 0 4px; }
+.spectrum-rack { margin-top: 12px; padding: 12px 14px 7px; border: 1px solid #48504a; border-radius: 6px; background: linear-gradient(#171d19, #050706); box-shadow: inset 0 1px #8b9c8f33, inset 0 -2px #000; }
+.rack-legend { display: flex; justify-content: space-between; gap: 12px; color: #b1c9be; font-size: 10px; letter-spacing: .12em; margin-bottom: 7px; }
+#spectrum { width: 100%; height: auto; display: block; border: 1px solid #000; }
+.spectrum-controls { display: flex; align-items: center; gap: 12px; font-size: 12px; color: var(--muted); margin: 8px 0; }
+.spectrum-controls label { margin: 0; }
+.spectrum-controls input { width: 140px; padding: 0; accent-color: #6fffc5; }
+.spectrum-controls output { font-variant-numeric: tabular-nums; }
 .vu-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .vu { position: relative; }
 .vu canvas { display: block; width: 100%; height: auto; }
-.vu span { position: absolute; bottom: 8px; left: 50%; color: var(--muted); }
+.vu-readout { display: flex; justify-content: space-between; color: var(--muted); padding: 2px 10px 8px; font-size: 12px; font-variant-numeric: tabular-nums; }
+.peak-meters { display: grid; gap: 7px; margin-top: 12px; }
+.peak-row { display: grid; grid-template-columns: 44px 1fr 88px; align-items: center; gap: 10px; font-size: 12px; color: var(--muted); }
+.peak-row output { text-align: right; font-variant-numeric: tabular-nums; }
+.peak-track {
+  --led-gap: 4px; --led-step: calc(100% / 48);
+  --led-mask: repeating-linear-gradient(90deg, #000 0 calc(var(--led-step) - var(--led-gap)), transparent calc(var(--led-step) - var(--led-gap)) var(--led-step));
+  --led-colours: linear-gradient(90deg, #20ed86 0 72.916667%, #ffb928 72.916667% 89.583333%, #ff3a23 89.583333% 100%);
+  height: 11px; position: relative; isolation: isolate;
+}
+.peak-track::before, .peak-fill, .peak-glow > div {
+  position: absolute; inset: 0;
+  -webkit-mask-image: var(--led-mask); mask-image: var(--led-mask);
+}
+.peak-track::before {
+  content: '';
+  background: linear-gradient(180deg, #ffffff20 0 12%, transparent 25% 60%, #0009 100%), linear-gradient(90deg, #123e26 0 72.916667%, #4d350a 72.916667% 89.583333%, #4a170e 89.583333% 100%);
+  box-shadow: inset 0 1px #ffffff12, inset 0 -2px #0008;
+}
+.peak-fill {
+  background: radial-gradient(ellipse at 45% 40%, #ffffcc80, transparent 70%), linear-gradient(180deg, #fff7 0 12%, #fff1 24% 60%, #0005 85%, #0009 100%), var(--led-colours);
+  background-size: var(--led-step) 100%, 100% 100%, 100% 100%;
+  box-shadow: inset 0 1px #ffffcaaa, inset 0 -1px #0008;
+  clip-path: inset(0 100% 0 0);
+}
+/* Blur just two narrow rows, not every LED or the whole panel. The blur
+   wrapper is outside the segmented mask so light can spill into the gaps. */
+.peak-glow { position: absolute; inset: 0; filter: blur(3px); opacity: .72; pointer-events: none; }
+.peak-glow > div { background: var(--led-colours); clip-path: inset(0 100% 0 0); }
+.peak-hold {
+  position: absolute; top: 0; bottom: 0; width: calc(var(--led-step) - var(--led-gap)); left: 0; opacity: 0;
+  color: #20ed86;
+  background: radial-gradient(ellipse at 45% 40%, #ffffcc80, transparent 70%), linear-gradient(180deg, #fff7 0 12%, #fff1 24% 60%, #0005 85%, #0009 100%), currentColor;
+  box-shadow: inset 0 1px #ffffcaaa, inset 0 -1px #0008, 0 0 3px currentColor;
+}
 .visual-note { color: var(--muted); font-size: 12px; margin: 8px 0 0; text-align: right; }
+.visual-note[hidden] { display: none; }
+.fullscreen-button { margin: 0; white-space: nowrap; }
+.fullscreen-hint { margin: 5px 0 0; color: var(--muted); font-size: 12px; text-align: right; }
+.fullscreen-hint[hidden] { display: none; }
+body.audio-fullscreen { overflow: hidden; }
+body.audio-fullscreen > header, body.audio-fullscreen #dashboardControls { visibility: hidden; }
+#liveAudioPanel::backdrop { background: #101311; }
+#liveAudioPanel.is-fullscreen {
+  position: fixed; inset: 0; z-index: 1000;
+  width: 100%; height: 100vh; height: 100dvh;
+  max-width: none; margin: 0; border: 0; border-radius: 0;
+  padding: max(16px, env(safe-area-inset-top)) max(20px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom)) max(20px, env(safe-area-inset-left));
+  background: #111613;
+  display: flex; flex-direction: column; gap: 8px; overflow: auto;
+}
+#liveAudioPanel.is-fullscreen .visual-heading { flex: 0 0 auto; align-items: center; }
+#liveAudioPanel.is-fullscreen .visual-view { flex: 1 0 auto; display: flex; flex-direction: column; justify-content: center; min-height: 0; }
+#liveAudioPanel.is-fullscreen .spectrum-rack { margin-top: 0; }
+#liveAudioPanel.is-fullscreen #spectrum { max-height: calc(100dvh - 230px); min-height: 130px; object-fit: contain; }
+#liveAudioPanel.is-fullscreen .vu-pair { align-items: center; }
+#liveAudioPanel.is-fullscreen .vu canvas { max-height: calc(100dvh - 240px); min-height: 130px; object-fit: contain; }
+#liveAudioPanel.is-fullscreen .peak-track { height: 18px; }
+#liveAudioPanel.is-fullscreen .visual-note { margin-top: 0; }
+#liveAudioPanel.is-fullscreen .peak-meters { flex: 0 0 auto; }
 .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; padding-bottom: 32px; }
 dl { margin: 0 0 18px; }
 dl div { display: flex; justify-content: space-between; gap: 16px; padding: 8px 0; border-bottom: 1px solid var(--edge); }
@@ -90,9 +154,90 @@ button:disabled { opacity: .42; cursor: not-allowed; }
 audio { width: 100%; margin: 4px 0 8px; }
 .help { color: var(--muted); margin: 12px 0 0; }
 
+/* A passive hi-fi faceplate: all texture and reflections are static CSS.
+   Keep the existing canvas cadence and the audio/telemetry path unchanged. */
+#liveAudioPanel {
+  --muted: #454137;
+  --faceplate: repeating-linear-gradient(0deg, #fff1 0 1px, #382b1808 1px 2px, transparent 2px 4px), linear-gradient(105deg, #b5ad9b, #e2dac7 24%, #c7bda7 65%, #ddd5c5);
+  position: relative; padding: 22px 28px 20px; border-radius: 3px;
+  color: #272720; border: 1px solid #9a9485; background: var(--faceplate);
+  box-shadow: inset 0 2px 1px #fff9, inset 0 -3px 2px #574e3d88, 0 12px 22px #0008;
+}
+#liveAudioPanel .visual-heading { align-items: center; gap: 16px; margin-bottom: 17px; }
+#liveAudioPanel .visual-heading > div { flex: 1; }
+#liveAudioPanel .eyebrow { color: #434036; font-size: 9px; letter-spacing: .22em; }
+#liveAudioPanel h2 { padding: 5px 12px; background: #252824; color: #dbd6c7; font-size: 13px; letter-spacing: .17em; text-transform: uppercase; font-weight: 400; }
+#liveAudioPanel #format { color: #454137; margin: 0; font-size: 11px; text-transform: uppercase; letter-spacing: .06em; }
+#liveAudioPanel .spectrum-rack, #liveAudioPanel .vu-pair {
+  position: relative; margin-top: 0; padding: 17px 20px 10px; border: 5px solid #272a25; border-radius: 1px;
+  background: #070c09; box-shadow: 0 0 0 1px #a8a492, 0 2px 0 2px #eee5d0, inset 0 3px 9px #000, 0 5px 9px #0006;
+}
+#liveAudioPanel .spectrum-rack::after, #liveAudioPanel .vu-pair::after {
+  content: ''; position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(108deg, transparent 8%, #d4e6ce08 24%, transparent 25% 59%, #fff04a03 60%, transparent 77%), linear-gradient(#dce8d008, transparent 28%);
+  box-shadow: inset 0 0 12px #0008;
+}
+#liveAudioPanel .rack-legend { color: #8c9b88; font-size: 9px; letter-spacing: .16em; }
+#liveAudioPanel .vu-readout { color: #aeb7a7; }
+#liveAudioPanel .spectrum-controls { margin: 15px 0 10px; font-size: 10px; text-transform: uppercase; letter-spacing: .07em; }
+#liveAudioPanel .spectrum-controls input { accent-color: #353a31; height: 16px; }
+#liveAudioPanel .peak-meters { padding: 13px 15px; background: #101610; border: 3px solid #363a31; box-shadow: inset 0 2px 5px #000, 0 1px #f7edda; margin-top: 14px; }
+#liveAudioPanel .peak-row { color: #b7c0ab; font-size: 10px; letter-spacing: .06em; }
+#liveAudioPanel .visual-tools { align-items: center; justify-content: flex-end; gap: 18px; margin-top: 20px; }
+.faceplate-brand { margin-right: auto; display: grid; grid-template-columns: auto auto; align-items: center; column-gap: 15px; color: #242720; text-shadow: 0 1px #f5eed066; }
+.retro-wordmark { font: 900 28px/1 Arial, Helvetica, sans-serif; letter-spacing: .12em; transform: scaleX(1.04); transform-origin: left center; }
+.nameplate-model { border-left: 1px solid #55584b; padding-left: 13px; font-size: 13px; font-weight: 600; line-height: 1.3; letter-spacing: .13em; }
+.faceplate-brand small { display: block; font-size: 7px; font-weight: 500; letter-spacing: .12em; }
+.nameplate-diy { grid-column: 1 / -1; margin-top: 5px; font-size: 7px; letter-spacing: .17em; color: #555448; }
+#liveAudioPanel .visual-toggle { padding: 0; border: 0; background: transparent; gap: 12px; }
+#liveAudioPanel .visual-tools button {
+  position: relative; margin: 0; padding: 8px 12px; border: 2px solid #34372f; border-radius: 1px;
+  background: linear-gradient(#ece8dc 0 22%, #bab8aa 24% 77%, #85877b 79%); color: #252a21;
+  box-shadow: 0 2px 0 #f6ecd2, inset 0 1px #fff8, 0 2px 4px #0005;
+  font-size: 10px; letter-spacing: .07em; text-transform: uppercase;
+}
+#liveAudioPanel .visual-toggle button::before { content: ''; display: inline-block; width: 6px; height: 4px; margin-right: 7px; vertical-align: 2px; background: #344e32; border: 1px solid #293325; }
+#liveAudioPanel .visual-toggle button[aria-pressed="true"]::before { background: #7fff7a; box-shadow: 0 0 4px #58ff69; }
+#liveAudioPanel .visual-tools button:hover { filter: brightness(1.08); }
+#liveAudioPanel button:focus-visible, #liveAudioPanel input:focus-visible { outline: 2px solid #205d34; outline-offset: 4px; }
+#liveAudioPanel.is-fullscreen { background: var(--faceplate); }
+#liveAudioPanel.is-fullscreen .visual-tools { flex: 0 0 auto; margin-top: 5px; }
+
 @media (max-width: 720px) {
   header, .visual-heading { align-items: flex-start; flex-direction: column; }
   .grid, .vu-pair { grid-template-columns: 1fr; }
   .visual-tools { width: 100%; align-items: flex-start; justify-content: space-between; }
   .visual-note { text-align: left; }
+  .spectrum-rack { padding: 8px 3px 3px; }
+  .rack-legend { font-size: 8px; letter-spacing: .03em; }
+  .spectrum-controls { flex-wrap: wrap; gap: 8px; }
+  .peak-track { --led-gap: 1px; }
+  #liveAudioPanel { padding: 16px 12px; }
+  #liveAudioPanel .visual-heading { align-items: stretch; gap: 9px; }
+  #liveAudioPanel .spectrum-rack, #liveAudioPanel .vu-pair { padding: 10px 4px 5px; border-width: 3px; }
+  #liveAudioPanel .rack-legend { font-size: 7px; letter-spacing: .02em; }
+  #liveAudioPanel .visual-tools { gap: 12px; justify-content: space-between; }
+  #liveAudioPanel .faceplate-brand { flex-basis: 100%; }
+  #liveAudioPanel .peak-meters { padding: 12px 7px; }
+  #liveAudioPanel .peak-row { grid-template-columns: 36px 1fr 65px; gap: 6px; }
+  #liveAudioPanel.is-fullscreen .visual-heading { align-items: flex-start; gap: 8px; }
+  #liveAudioPanel.is-fullscreen #format { display: none; }
+  #liveAudioPanel.is-fullscreen .vu canvas { max-height: calc((100dvh - 260px) / 2); }
+  #liveAudioPanel.is-fullscreen .visual-note { font-size: 10px; }
+}
+@media (max-height: 520px) and (orientation: landscape) {
+  #liveAudioPanel.is-fullscreen { padding: 8px 16px; gap: 4px; }
+  #liveAudioPanel.is-fullscreen .visual-heading { flex-direction: row; gap: 8px; }
+  #liveAudioPanel.is-fullscreen .visual-heading h2,
+  #liveAudioPanel.is-fullscreen #format { display: none; }
+  #liveAudioPanel.is-fullscreen .visual-heading { margin-bottom: 0; }
+  #liveAudioPanel.is-fullscreen .faceplate-brand { flex-basis: auto; }
+  #liveAudioPanel.is-fullscreen .visual-tools { margin-top: 0; }
+  #liveAudioPanel.is-fullscreen .peak-meters { padding: 6px 12px; }
+  #liveAudioPanel.is-fullscreen .visual-tools { width: auto; }
+  #liveAudioPanel.is-fullscreen .vu-pair { grid-template-columns: 1fr 1fr; }
+  #liveAudioPanel.is-fullscreen #spectrum,
+  #liveAudioPanel.is-fullscreen .vu canvas { max-height: calc(100dvh - 160px); min-height: 80px; }
+  #liveAudioPanel.is-fullscreen .spectrum-controls { margin: 4px 0; }
+  #liveAudioPanel.is-fullscreen .peak-meters { margin-top: 4px; gap: 4px; }
 }

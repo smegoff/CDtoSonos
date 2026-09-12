@@ -19,33 +19,48 @@
   </header>
 
   <main>
-    <section class="meters panel">
+    <section id="liveAudioPanel" class="meters panel" aria-labelledby="liveAudioTitle">
       <div class="visual-heading">
         <div>
           <p class="eyebrow">Live audio</p>
-          <h2>Digital input monitor</h2>
+          <h2 id="liveAudioTitle">Digital input monitor</h2>
         </div>
-        <div class="visual-tools">
-          <p id="format">44.1 kHz - 16-bit - stereo FLAC</p>
-          <div class="visual-toggle" role="group" aria-label="Audio visualizer">
-            <button id="showVu" type="button" data-visual="vu" aria-pressed="true">VU meters</button>
-            <button id="showSpectrum" class="secondary" type="button" data-visual="spectrum" aria-pressed="false">Spectrum</button>
-          </div>
-        </div>
+        <p id="format">44.1 kHz - 16-bit - stereo FLAC</p>
       </div>
       <div id="spectrumView" class="visual-view" hidden>
-        <canvas id="spectrum" width="1000" height="230" aria-label="Live audio spectrum"></canvas>
+        <div class="spectrum-rack">
+          <div class="rack-legend"><span>31 BAND REAL-TIME ANALYSER</span><span>20 Hz — 20 kHz · L/R energy</span></div>
+          <canvas id="spectrum" width="1100" height="290" aria-label="Live 31-band LED audio spectrum"></canvas>
+        </div>
+        <div class="spectrum-controls"><label for="spectrumGain">Display sensitivity</label><input id="spectrumGain" type="range" min="-12" max="24" step="3" value="0"><output id="spectrumGainValue">0 dB · visuals only</output></div>
       </div>
       <div id="vuView" class="visual-view">
         <div class="vu-pair">
-          <div class="vu"><canvas id="vuLeft" width="420" height="210" aria-label="Left channel VU meter"></canvas><span>L</span></div>
-          <div class="vu"><canvas id="vuRight" width="420" height="210" aria-label="Right channel VU meter"></canvas><span>R</span></div>
+          <div class="vu"><canvas id="vuLeft" width="420" height="210" aria-label="Left channel VU meter"></canvas><div class="vu-readout"><span>L RMS</span><output id="vuLeftValue">-- dBFS</output></div></div>
+          <div class="vu"><canvas id="vuRight" width="420" height="210" aria-label="Right channel VU meter"></canvas><div class="vu-readout"><span>R RMS</span><output id="vuRightValue">-- dBFS</output></div></div>
         </div>
       </div>
-      <p class="visual-note">30 fps display smoothing runs in this browser; the lossless stream remains the device priority.</p>
+      <div class="peak-meters" aria-label="Stereo LED peak levels">
+        <div class="peak-row"><span>L peak</span><div class="peak-track"><div class="peak-glow" aria-hidden="true"><div id="glowLeft"></div></div><div id="peakLeft" class="peak-fill"></div><i id="holdLeft" class="peak-hold"></i></div><output id="peakLeftValue">-- dBFS</output></div>
+        <div class="peak-row"><span>R peak</span><div class="peak-track"><div class="peak-glow" aria-hidden="true"><div id="glowRight"></div></div><div id="peakRight" class="peak-fill"></div><i id="holdRight" class="peak-hold"></i></div><output id="peakRightValue">-- dBFS</output></div>
+      </div>
+      <div class="visual-tools">
+        <span class="faceplate-brand" aria-label="Sonos compatible DIY CD streamer">
+          <span class="retro-wordmark" aria-hidden="true">SONOS</span>
+          <span class="nameplate-model">CD-S1 <small>LOSSLESS NETWORK TRANSPORT</small></span>
+          <span class="nameplate-diy">DIY · SONOS COMPATIBLE</span>
+        </span>
+        <div class="visual-toggle" role="group" aria-label="Audio visualizer">
+          <button id="showVu" type="button" data-visual="vu" aria-pressed="true">VU meters</button>
+          <button id="showSpectrum" class="secondary" type="button" data-visual="spectrum" aria-pressed="false">Spectrum</button>
+        </div>
+        <button id="fullscreenAudio" class="secondary fullscreen-button" type="button" aria-controls="liveAudioPanel" aria-pressed="false" title="Expand only the Live Audio panel">⛶ Fullscreen</button>
+      </div>
+      <p id="meterHealth" class="visual-note" role="status" hidden></p>
+      <p id="fullscreenHint" class="fullscreen-hint" role="status" hidden></p>
     </section>
 
-    <section class="grid">
+    <section id="dashboardControls" class="grid">
       <article class="panel">
         <p class="eyebrow">Lossless stream</p>
         <h2>Playback</h2>
@@ -95,15 +110,23 @@
           <div><dt>Free heap</dt><dd id="heap">--</dd></div>
           <div><dt>CPU load</dt><dd id="cpu">--</dd></div>
           <div><dt>CPU cores</dt><dd id="cpuCores">--</dd></div>
-          <div><dt>Stream delivery</dt><dd id="delivery">--</dd></div>
+          <div><dt>Stream delivery (all clients)</dt><dd id="delivery">--</dd></div>
+          <div><dt>Capture delivery</dt><dd id="captureRate">--</dd></div>
           <div><dt>Source LRCLK</dt><dd id="sourceRate">--</dd></div>
           <div><dt>Captured</dt><dd id="captured">--</dd></div>
-          <div><dt>I2S timeouts</dt><dd id="timeouts">0</dd></div>
+          <div><dt>Empty I2S waits</dt><dd id="timeouts">0</dd></div>
+          <div><dt>DMA buffers lost</dt><dd id="dmaLoss">--</dd></div>
+          <div><dt>Capture blocks lost</dt><dd id="publishLoss">--</dd></div>
+          <div><dt>Capture interruptions</dt><dd id="clockLoss">--</dd></div>
+          <div><dt>Last captured block</dt><dd id="captureAge">--</dd></div>
           <div><dt>Capture stack free</dt><dd id="captureStack">--</dd></div>
           <div><dt>Analysis stack free</dt><dd id="analysisStack">--</dd></div>
           <div><dt>Analysis updates</dt><dd id="analysisRuns">0</dd></div>
+          <div><dt>Meter / spectrum updates</dt><dd id="meterUpdates">--</dd></div>
+          <div><dt>Analysis block time / maximum</dt><dd id="analysisTime">--</dd></div>
           <div><dt>Firmware</dt><dd id="version">--</dd></div>
         </dl>
+        <p class="help">Empty waits can occur when the CD clock stops; they are not a count of corrupted samples. Lost-buffer counters and capture delivery help identify interruptions. Counters reset on reboot.</p>
       </article>
     </section>
   </main>

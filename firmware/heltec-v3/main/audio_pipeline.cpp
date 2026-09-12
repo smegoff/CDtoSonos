@@ -7,6 +7,7 @@
 #include "driver/gpio.h"
 #include "driver/i2s_std.h"
 #include "driver/pulse_cnt.h"
+#include "esp_attr.h"
 #include "esp_check.h"
 #include "esp_log.h"
 #include "esp_timer.h"
@@ -16,15 +17,25 @@ namespace cdts {
 namespace {
 constexpr char kTag[] = "audio";
 constexpr float kSilenceThresholdDbfs = -55.0F;
-constexpr float kPi = 3.14159265358979323846F;
-// About 5.4 display updates per second at 44.1 kHz. This task remains
-// low-priority on the capture core, so I2S capture always preempts it.
-constexpr uint64_t kAnalysisIntervalBlocks = 8;
-constexpr uint32_t kClockLossTimeouts = 8;
-constexpr std::array<float, 16> kSpectrumFrequencies = {
-    63.0F, 100.0F, 160.0F, 250.0F, 400.0F, 630.0F, 1000.0F, 1600.0F,
-    2500.0F, 4000.0F, 6300.0F, 8000.0F, 10000.0F, 12500.0F, 16000.0F,
-    20000.0F};
+// Levels and continuous spectrum filters process every block (~43 Hz).
+// Spectrum display snapshots are published at ~10.8 Hz. Capture still
+// preempts this low-priority task.
+constexpr uint64_t kSpectrumIntervalBlocks = 4;
+// i2s_channel_read accepts milliseconds, unlike the FreeRTOS APIs.
+constexpr uint32_t kReadTimeoutMs = 150;
+constexpr int64_t kClockLossUs = 1200000;
+
+static_assert(std::atomic<uint32_t>::is_always_lock_free,
+              "The I2S ISR counter must never acquire a lock");
+
+bool IRAM_ATTR on_receive_queue_overflow(i2s_chan_handle_t,
+                                         i2s_event_data_t*, void* context) {
+    // No logging, allocation, or task mutex use in this callback. The pipeline
+    // and its counter live in internal RAM on this no-PSRAM board.
+    static_cast<std::atomic<uint32_t>*>(context)->fetch_add(
+        1, std::memory_order_relaxed);
+    return false;
+}
 }
 
 AudioPipeline::AudioPipeline() {
@@ -93,6 +104,10 @@ void AudioPipeline::capture_task() {
     standard.gpio_cfg.invert_flags.ws_inv = false;
 
     ESP_ERROR_CHECK(i2s_channel_init_std_mode(receiver, &standard));
+    i2s_event_callbacks_t callbacks = {};
+    callbacks.on_recv_q_ovf = on_receive_queue_overflow;
+    ESP_ERROR_CHECK(i2s_channel_register_event_callback(
+        receiver, &callbacks, &dma_queue_overflows_));
     ESP_ERROR_CHECK(i2s_channel_enable(receiver));
 
     pcnt_unit_handle_t lrclk_counter = nullptr;
@@ -132,7 +147,7 @@ void AudioPipeline::capture_task() {
 
     auto& raw = raw_buffer_;
     size_t accumulated_bytes = 0;
-    uint32_t consecutive_empty_reads = 0;
+    int64_t last_received_us = esp_timer_get_time();
     ESP_LOGI(kTag,
              "I2S RX ready: slave, right-justified, 44.1kHz, stereo, "
              "16-bit data in 24-bit slots");
@@ -144,9 +159,24 @@ void AudioPipeline::capture_task() {
         const size_t remaining = sizeof(raw) - accumulated_bytes;
         const esp_err_t result =
             i2s_channel_read(receiver, write_at, remaining, &bytes_read,
-                             pdMS_TO_TICKS(150));
+                             kReadTimeoutMs);
 
         const int64_t now = esp_timer_get_time();
+        if ((result == ESP_OK || result == ESP_ERR_TIMEOUT) && bytes_read > 0) {
+            last_received_us = now;
+        } else if (now - last_received_us >= kClockLossUs) {
+            if (xSemaphoreTake(mutex_, pdMS_TO_TICKS(5)) == pdTRUE) {
+                if (metrics_.clock_locked) ++metrics_.clock_loss_events;
+                metrics_.clock_locked = false;
+                metrics_.signal_present = false;
+                metrics_.peak_left_dbfs = -96.0F;
+                metrics_.peak_right_dbfs = -96.0F;
+                metrics_.rms_left_dbfs = -96.0F;
+                metrics_.rms_right_dbfs = -96.0F;
+                metrics_.spectrum_dbfs.fill(-96.0F);
+                xSemaphoreGive(mutex_);
+            }
+        }
         const int64_t rate_elapsed = now - rate_window_started;
         if (rate_elapsed >= 250000) {
             int lrclk_edges = 0;
@@ -166,9 +196,6 @@ void AudioPipeline::capture_task() {
         if (result == ESP_ERR_TIMEOUT && bytes_read == 0) {
             if (xSemaphoreTake(mutex_, pdMS_TO_TICKS(5)) == pdTRUE) {
                 ++metrics_.read_timeouts;
-                if (++consecutive_empty_reads >= kClockLossTimeouts) {
-                    metrics_.clock_locked = false;
-                }
                 xSemaphoreGive(mutex_);
             }
             continue;
@@ -181,7 +208,6 @@ void AudioPipeline::capture_task() {
 
         // ESP-IDF may return ESP_ERR_TIMEOUT after copying a valid partial DMA
         // buffer. Retain those bytes and complete the block on the next read.
-        consecutive_empty_reads = 0;
         accumulated_bytes += bytes_read;
         if (accumulated_bytes < sizeof(raw)) {
             continue;
@@ -213,20 +239,15 @@ void AudioPipeline::analysis_task() {
             continue;
         }
         sequence = next_sequence;
-        if ((sequence % kAnalysisIntervalBlocks) != 0) {
-            continue;
-        }
-        analyze(samples.data(), gpio_get_level(board::kEmphasis) != 0);
-        if (xSemaphoreTake(mutex_, pdMS_TO_TICKS(5)) == pdTRUE) {
-            ++metrics_.analysis_runs;
-            xSemaphoreGive(mutex_);
-        }
+        analyze(samples.data(), gpio_get_level(board::kEmphasis) != 0,
+                (sequence % kSpectrumIntervalBlocks) == 0);
     }
     vTaskDelete(nullptr);
 }
 
 void AudioPipeline::publish(const int16_t* samples) {
     if (xSemaphoreTake(mutex_, pdMS_TO_TICKS(10)) != pdTRUE) {
+        capture_publish_drops_.fetch_add(1, std::memory_order_relaxed);
         return;
     }
     const uint64_t sequence = ++latest_sequence_;
@@ -235,67 +256,75 @@ void AudioPipeline::publish(const int16_t* samples) {
     std::copy_n(samples, kSamplesPerBlock, block.samples.begin());
     metrics_.clock_locked = true;
     metrics_.captured_frames += board::kFlacBlockSamples;
+    last_published_us_ = esp_timer_get_time();
     xSemaphoreGive(mutex_);
     xSemaphoreGive(block_ready_);
 }
 
-float AudioPipeline::to_dbfs(double value) {
-    if (value <= 1.0) {
+float AudioPipeline::to_dbfs(float value) {
+    if (value <= 1.0F) {
         return -96.0F;
     }
-    return static_cast<float>(
-        std::max(-96.0, 20.0 * std::log10(value / 32768.0)));
+    return std::max(-96.0F, 20.0F * std::log10(value / 32768.0F));
 }
 
-void AudioPipeline::analyze(const int16_t* samples, bool emphasis) {
+void AudioPipeline::analyze(const int16_t* samples, bool emphasis,
+                            bool update_spectrum) {
+    const int64_t dsp_started_us = esp_timer_get_time();
     int32_t peak_left = 0;
     int32_t peak_right = 0;
-    double sum_left = 0.0;
-    double sum_right = 0.0;
+    uint64_t sum_left = 0;
+    uint64_t sum_right = 0;
 
     for (size_t frame = 0; frame < board::kFlacBlockSamples; ++frame) {
         const int32_t left = samples[frame * 2];
         const int32_t right = samples[(frame * 2) + 1];
         peak_left = std::max(peak_left, std::abs(left));
         peak_right = std::max(peak_right, std::abs(right));
-        sum_left += static_cast<double>(left) * left;
-        sum_right += static_cast<double>(right) * right;
+        // A squared int16_t fits int32_t, but a full block needs uint64_t.
+        sum_left += static_cast<uint32_t>(left * left);
+        sum_right += static_cast<uint32_t>(right * right);
     }
 
-    std::array<float, 16> spectrum = {};
-    for (size_t band = 0; band < kSpectrumFrequencies.size(); ++band) {
-        const float omega =
-            (2.0 * kPi * kSpectrumFrequencies[band]) / board::kSampleRate;
-        const float coefficient = 2.0F * std::cos(omega);
-        float q0 = 0.0F;
-        float q1 = 0.0F;
-        float q2 = 0.0F;
-        for (size_t frame = 0; frame < board::kFlacBlockSamples; ++frame) {
-            const float mono =
-                (static_cast<float>(samples[frame * 2]) +
-                 static_cast<float>(samples[(frame * 2) + 1])) *
-                0.5F;
-            q0 = (coefficient * q1) - q2 + mono;
-            q2 = q1;
-            q1 = q0;
-        }
-        const float power =
-            std::max(0.0F,
-                     (q1 * q1) + (q2 * q2) - (coefficient * q1 * q2));
-        const float magnitude =
-            std::sqrt(power) /
-            (static_cast<float>(board::kFlacBlockSamples) * 0.5F);
-        spectrum[band] = to_dbfs(magnitude);
+    const uint32_t now_ms =
+        static_cast<uint32_t>(esp_timer_get_time() / 1000);
+    constexpr uint32_t kPeakHistoryMs =
+        (5U * board::kFlacBlockSamples * 1000U) / board::kSampleRate;
+    if (now_ms - peak_history_updated_ms_ >= kPeakHistoryMs) {
+        peak_history_.fill({0, 0});
+        spectrum_analyzer_.reset();
+    }
+    peak_history_updated_ms_ = now_ms;
+    peak_history_[peak_history_index_] = {
+        static_cast<uint16_t>(peak_left), static_cast<uint16_t>(peak_right)};
+    peak_history_index_ = (peak_history_index_ + 1) % peak_history_.size();
+    for (const auto& peaks : peak_history_) {
+        peak_left = std::max(peak_left, static_cast<int32_t>(peaks[0]));
+        peak_right = std::max(peak_right, static_cast<int32_t>(peaks[1]));
     }
 
-    const float peak_l = to_dbfs(peak_left);
-    const float peak_r = to_dbfs(peak_right);
-    const float rms_l =
-        to_dbfs(std::sqrt(sum_left / board::kFlacBlockSamples));
-    const float rms_r =
-        to_dbfs(std::sqrt(sum_right / board::kFlacBlockSamples));
+    spectrum_analyzer_.process(samples, board::kFlacBlockSamples);
+    std::array<float, SpectrumAnalyzer::kBandCount> spectrum = {};
+    if (update_spectrum) {
+        spectrum = spectrum_analyzer_.levels_dbfs();
+    }
+
+    const float peak_l = to_dbfs(static_cast<float>(peak_left));
+    const float peak_r = to_dbfs(static_cast<float>(peak_right));
+    const float rms_l = to_dbfs(std::sqrt(
+        static_cast<float>(sum_left) / board::kFlacBlockSamples));
+    const float rms_r = to_dbfs(std::sqrt(
+        static_cast<float>(sum_right) / board::kFlacBlockSamples));
+    const uint32_t dsp_us = static_cast<uint32_t>(
+        esp_timer_get_time() - dsp_started_us);
 
     if (xSemaphoreTake(mutex_, pdMS_TO_TICKS(10)) == pdTRUE) {
+        // Analysis can finish after capture declares clock loss. Do not
+        // resurrect stale signal levels from the buffered block in that case.
+        if (!metrics_.clock_locked) {
+            xSemaphoreGive(mutex_);
+            return;
+        }
         metrics_.peak_left_dbfs = peak_l;
         metrics_.peak_right_dbfs = peak_r;
         metrics_.rms_left_dbfs = rms_l;
@@ -303,7 +332,18 @@ void AudioPipeline::analyze(const int16_t* samples, bool emphasis) {
         metrics_.signal_present =
             std::max(rms_l, rms_r) >= kSilenceThresholdDbfs;
         metrics_.emphasis = emphasis;
-        metrics_.spectrum_dbfs = spectrum;
+        metrics_.meter_updated_ms =
+            static_cast<uint32_t>(esp_timer_get_time() / 1000);
+        metrics_.analysis_dsp_us = dsp_us;
+        metrics_.analysis_dsp_max_us =
+            std::max(metrics_.analysis_dsp_max_us, dsp_us);
+        ++metrics_.meter_updates;
+        if (update_spectrum) {
+            metrics_.spectrum_dbfs = spectrum;
+            metrics_.spectrum_updated_ms = metrics_.meter_updated_ms;
+            ++metrics_.spectrum_updates;
+            ++metrics_.analysis_runs;
+        }
         xSemaphoreGive(mutex_);
     }
 }
@@ -358,12 +398,27 @@ bool AudioPipeline::copy_after(uint64_t last_sequence,
     return false;
 }
 
-AudioMetrics AudioPipeline::metrics() const {
+AudioMetrics AudioPipeline::meters() const {
     AudioMetrics copy;
     if (xSemaphoreTake(mutex_, pdMS_TO_TICKS(20)) == pdTRUE) {
         copy = metrics_;
+        if (last_published_us_ != 0) {
+            const uint64_t age_ms = static_cast<uint64_t>(
+                (esp_timer_get_time() - last_published_us_) / 1000);
+            copy.capture_age_ms = static_cast<uint32_t>(
+                std::min<uint64_t>(age_ms, UINT32_MAX - 1ULL));
+        }
         xSemaphoreGive(mutex_);
     }
+    copy.dma_queue_overflows =
+        dma_queue_overflows_.load(std::memory_order_relaxed);
+    copy.capture_publish_drops =
+        capture_publish_drops_.load(std::memory_order_relaxed);
+    return copy;
+}
+
+AudioMetrics AudioPipeline::metrics() const {
+    AudioMetrics copy = meters();
     if (capture_task_handle_ != nullptr) {
         copy.capture_stack_free = static_cast<uint32_t>(
             uxTaskGetStackHighWaterMark(capture_task_handle_));

@@ -146,9 +146,14 @@ esp_err_t WebServer::status_handler(httpd_req_t* request) {
         "\"emphasis\":%s,\"peak_l\":%.2f,\"peak_r\":%.2f,"
         "\"rms_l\":%.2f,\"rms_r\":%.2f,\"captured_frames\":%llu,"
         "\"read_timeouts\":%u,\"overruns\":%u,\"stream_clients\":%u,"
+        "\"dma_queue_overflows\":%u,\"capture_publish_drops\":%u,"
+        "\"clock_loss_events\":%u,\"capture_age_ms\":%u,"
         "\"cpu_percent\":%.1f,\"cpu0_percent\":%.1f,\"cpu1_percent\":%.1f,"
         "\"cpu_mhz\":%u,\"capture_stack_free\":%u,"
         "\"analysis_stack_free\":%u,\"analysis_runs\":%u,"
+        "\"meter_updates\":%u,\"spectrum_updates\":%u,"
+        "\"meter_updated_ms\":%u,\"spectrum_updated_ms\":%u,"
+        "\"analysis_dsp_us\":%u,\"analysis_dsp_max_us\":%u,"
         "\"source_rate_hz\":%u,"
         "\"sonos_auto_enabled\":%s,\"sonos_auto_state\":\"%s\","
         "\"sonos_group_ip\":\"%s\",\"sonos_group_name\":\"%s\","
@@ -174,11 +179,21 @@ esp_err_t WebServer::status_handler(httpd_req_t* request) {
         static_cast<unsigned>(metrics.read_timeouts),
         static_cast<unsigned>(metrics.overruns),
         static_cast<unsigned>(self->lossless_.clients()),
+        static_cast<unsigned>(metrics.dma_queue_overflows),
+        static_cast<unsigned>(metrics.capture_publish_drops),
+        static_cast<unsigned>(metrics.clock_loss_events),
+        static_cast<unsigned>(metrics.capture_age_ms),
         cpu.total, cpu.core0, cpu.core1,
         static_cast<unsigned>(CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ),
         static_cast<unsigned>(metrics.capture_stack_free),
         static_cast<unsigned>(metrics.analysis_stack_free),
         static_cast<unsigned>(metrics.analysis_runs),
+        static_cast<unsigned>(metrics.meter_updates),
+        static_cast<unsigned>(metrics.spectrum_updates),
+        static_cast<unsigned>(metrics.meter_updated_ms),
+        static_cast<unsigned>(metrics.spectrum_updated_ms),
+        static_cast<unsigned>(metrics.analysis_dsp_us),
+        static_cast<unsigned>(metrics.analysis_dsp_max_us),
         static_cast<unsigned>(metrics.source_rate_hz),
         automation.enabled ? "true" : "false",
         json_escape(automation.state).c_str(),
@@ -189,12 +204,60 @@ esp_err_t WebServer::status_handler(httpd_req_t* request) {
         ip.c_str());
 
     for (size_t index = 0; index < metrics.spectrum_dbfs.size(); ++index) {
+        if (offset < 0 || static_cast<size_t>(offset) >= json.size()) {
+            return httpd_resp_send_err(request, HTTPD_500_INTERNAL_SERVER_ERROR,
+                                       "Status response too large");
+        }
         offset += std::snprintf(
             json.data() + offset, json.size() - offset, "%s%.1f",
             index == 0 ? "" : ",", metrics.spectrum_dbfs[index]);
     }
+    if (offset < 0 || static_cast<size_t>(offset) + 3 > json.size()) {
+        return httpd_resp_send_err(request, HTTPD_500_INTERNAL_SERVER_ERROR,
+                                   "Status response too large");
+    }
     std::snprintf(json.data() + offset, json.size() - offset, "]}");
 
+    httpd_resp_set_type(request, "application/json");
+    httpd_resp_set_hdr(request, "Cache-Control", "no-store");
+    return httpd_resp_sendstr(request, json.data());
+}
+
+esp_err_t WebServer::meters_handler(httpd_req_t* request) {
+    auto* self = static_cast<WebServer*>(request->user_ctx);
+    // Snapshot only: no DSP, Wi-Fi queries, task scans or Sonos locks here.
+    const AudioMetrics metrics = self->audio_.meters();
+    std::array<char, 768> json = {};
+    int offset = std::snprintf(
+        json.data(), json.size(),
+        "{\"clock_locked\":%s,\"signal_present\":%s,"
+        "\"peak_l\":%.2f,\"peak_r\":%.2f,\"rms_l\":%.2f,\"rms_r\":%.2f,"
+        "\"meter_updates\":%u,\"spectrum_updates\":%u,"
+        "\"meter_updated_ms\":%u,\"spectrum_updated_ms\":%u,"
+        "\"capture_age_ms\":%u,\"spectrum\":[",
+        metrics.clock_locked ? "true" : "false",
+        metrics.signal_present ? "true" : "false",
+        metrics.peak_left_dbfs, metrics.peak_right_dbfs,
+        metrics.rms_left_dbfs, metrics.rms_right_dbfs,
+        static_cast<unsigned>(metrics.meter_updates),
+        static_cast<unsigned>(metrics.spectrum_updates),
+        static_cast<unsigned>(metrics.meter_updated_ms),
+        static_cast<unsigned>(metrics.spectrum_updated_ms),
+        static_cast<unsigned>(metrics.capture_age_ms));
+    for (size_t index = 0; index < metrics.spectrum_dbfs.size(); ++index) {
+        if (offset < 0 || static_cast<size_t>(offset) >= json.size()) {
+            return httpd_resp_send_err(request, HTTPD_500_INTERNAL_SERVER_ERROR,
+                                       "Meter response too large");
+        }
+        offset += std::snprintf(json.data() + offset, json.size() - offset,
+                                "%s%.1f", index == 0 ? "" : ",",
+                                metrics.spectrum_dbfs[index]);
+    }
+    if (offset < 0 || static_cast<size_t>(offset) + 3 > json.size()) {
+        return httpd_resp_send_err(request, HTTPD_500_INTERNAL_SERVER_ERROR,
+                                   "Meter response too large");
+    }
+    std::snprintf(json.data() + offset, json.size() - offset, "]}");
     httpd_resp_set_type(request, "application/json");
     httpd_resp_set_hdr(request, "Cache-Control", "no-store");
     return httpd_resp_sendstr(request, json.data());
@@ -377,11 +440,12 @@ bool WebServer::start() {
         return false;
     }
 
-    const std::array<httpd_uri_t, 11> routes = {{
+    const std::array<httpd_uri_t, 12> routes = {{
         {"/", HTTP_GET, index_handler, this},
         {"/style.css", HTTP_GET, css_handler, this},
         {"/app.js", HTTP_GET, js_handler, this},
         {"/api/status", HTTP_GET, status_handler, this},
+        {"/api/meters", HTTP_GET, meters_handler, this},
         {"/api/wifi/scan", HTTP_GET, wifi_scan_handler, this},
         {"/api/wifi", HTTP_POST, wifi_handler, this},
         {"/api/sonos/discover", HTTP_GET, sonos_discover_handler, this},

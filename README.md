@@ -51,6 +51,10 @@ connected by a deliberately short screened four-core lead.
 
 ## Firmware build
 
+For an optional PC-side CRC/decode check of a live stream, see the
+[on-demand stream integrity test](docs/stream-integrity.md). It requires no
+firmware update and saves diagnostics, not audio.
+
 Install [PlatformIO](https://platformio.org/), then:
 
 ```sh

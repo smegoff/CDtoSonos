@@ -1,0 +1,2 @@
+# PC-only optional stream diagnostics. Not installed on the Heltec or Pi.
+av==18.1.0

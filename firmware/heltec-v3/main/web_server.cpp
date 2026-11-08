@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <array>
 #include <cstdio>
+#include <cstdlib>
 #include <cstring>
 
 #include "board.hpp"
@@ -133,26 +134,46 @@ esp_err_t WebServer::status_handler(httpd_req_t* request) {
     const std::string ip = self->wifi_.ip_address();
     const CpuUsage cpu = current_cpu_usage();
     const SonosAutomationStatus automation = self->automation_.status();
+    const EqStatus eq = self->audio_.eq_status();
+    const WifiLink wifi = self->wifi_.link();
+    const ListenerCounts listeners =
+        self->lossless_.listener_counts(automation.group_ip.c_str());
 
-    std::array<char, 2048> json = {};
+    std::array<char, 2304> json = {};
+    std::array<char, 40> gains = {};
+    size_t gain_length = 0;
+    for (const int gain : eq.gains) {
+        gain_length += std::snprintf(gains.data() + gain_length,
+            gains.size() - gain_length, "%s%d", gain_length == 0 ? "" : ",", gain);
+    }
     int offset = std::snprintf(
         json.data(), json.size(),
         "{\"version\":\"%s\",\"uptime_s\":%llu,\"heap_free\":%u,"
         "\"wifi_connected\":%s,\"setup_ap\":%s,\"ip\":\"%s\","
-        "\"wifi_rssi\":%d,"
+        "\"wifi_rssi\":%d,\"wifi_bssid\":\"%s\",\"wifi_channel\":%u,"
+        "\"wifi_reconnects\":%u,"
         "\"lora_enabled\":false,\"lora_reset_asserted\":true,"
         "\"sample_rate\":%u,\"bits\":%u,\"channels\":%u,"
         "\"slot_bits\":%u,\"clock_locked\":%s,\"signal_present\":%s,"
         "\"emphasis\":%s,\"peak_l\":%.2f,\"peak_r\":%.2f,"
         "\"rms_l\":%.2f,\"rms_r\":%.2f,\"captured_frames\":%llu,"
         "\"read_timeouts\":%u,\"overruns\":%u,\"stream_clients\":%u,"
+        "\"sonos_stream_clients\":%u,\"other_stream_clients\":%u,"
+        "\"dma_queue_overflows\":%u,\"capture_publish_drops\":%u,"
+        "\"clock_loss_events\":%u,\"capture_age_ms\":%u,"
         "\"cpu_percent\":%.1f,\"cpu0_percent\":%.1f,\"cpu1_percent\":%.1f,"
         "\"cpu_mhz\":%u,\"capture_stack_free\":%u,"
         "\"analysis_stack_free\":%u,\"analysis_runs\":%u,"
+        "\"meter_updates\":%u,\"spectrum_updates\":%u,"
+        "\"meter_updated_ms\":%u,\"spectrum_updated_ms\":%u,"
+        "\"analysis_dsp_us\":%u,\"analysis_dsp_max_us\":%u,"
         "\"source_rate_hz\":%u,"
         "\"sonos_auto_enabled\":%s,\"sonos_auto_state\":\"%s\","
         "\"sonos_group_ip\":\"%s\",\"sonos_group_name\":\"%s\","
         "\"sonos_play_commanded\":%s,"
+        "\"sonos_recovery_attempts\":%u,"
+        "\"eq_preset\":\"%s\",\"eq_gains\":[%s],\"eq_headroom_db\":%.2f,"
+        "\"eq_applied\":%s,\"eq_clipped_samples\":%u,"
         "\"stream_frames\":%llu,\"stream_url\":\"http://%s:8000/cd.flac\","
         "\"spectrum\":[",
         CDTS_FIRMWARE_VERSION,
@@ -160,7 +181,7 @@ esp_err_t WebServer::status_handler(httpd_req_t* request) {
         static_cast<unsigned>(esp_get_free_heap_size()),
         self->wifi_.connected() ? "true" : "false",
         self->wifi_.setup_ap_active() ? "true" : "false", ip.c_str(),
-        self->wifi_.rssi(),
+        wifi.rssi, wifi.bssid.data(), wifi.channel, wifi.reconnects,
         static_cast<unsigned>(board::kSampleRate),
         static_cast<unsigned>(board::kBitsPerSample),
         static_cast<unsigned>(board::kChannels),
@@ -173,28 +194,91 @@ esp_err_t WebServer::status_handler(httpd_req_t* request) {
         static_cast<unsigned long long>(metrics.captured_frames),
         static_cast<unsigned>(metrics.read_timeouts),
         static_cast<unsigned>(metrics.overruns),
-        static_cast<unsigned>(self->lossless_.clients()),
+        static_cast<unsigned>(listeners.sonos + listeners.other),
+        static_cast<unsigned>(listeners.sonos),
+        static_cast<unsigned>(listeners.other),
+        static_cast<unsigned>(metrics.dma_queue_overflows),
+        static_cast<unsigned>(metrics.capture_publish_drops),
+        static_cast<unsigned>(metrics.clock_loss_events),
+        static_cast<unsigned>(metrics.capture_age_ms),
         cpu.total, cpu.core0, cpu.core1,
         static_cast<unsigned>(CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ),
         static_cast<unsigned>(metrics.capture_stack_free),
         static_cast<unsigned>(metrics.analysis_stack_free),
         static_cast<unsigned>(metrics.analysis_runs),
+        static_cast<unsigned>(metrics.meter_updates),
+        static_cast<unsigned>(metrics.spectrum_updates),
+        static_cast<unsigned>(metrics.meter_updated_ms),
+        static_cast<unsigned>(metrics.spectrum_updated_ms),
+        static_cast<unsigned>(metrics.analysis_dsp_us),
+        static_cast<unsigned>(metrics.analysis_dsp_max_us),
         static_cast<unsigned>(metrics.source_rate_hz),
         automation.enabled ? "true" : "false",
         json_escape(automation.state).c_str(),
         json_escape(automation.group_ip).c_str(),
         json_escape(automation.group_name).c_str(),
         automation.play_commanded ? "true" : "false",
+        static_cast<unsigned>(automation.recovery_attempts),
+        kEqPresetNames[static_cast<size_t>(eq.preset)], gains.data(), eq.headroom_db,
+        eq.applied ? "true" : "false", static_cast<unsigned>(eq.clipped_samples),
         static_cast<unsigned long long>(self->lossless_.frames_sent()),
         ip.c_str());
 
     for (size_t index = 0; index < metrics.spectrum_dbfs.size(); ++index) {
+        if (offset < 0 || static_cast<size_t>(offset) >= json.size()) {
+            return httpd_resp_send_err(request, HTTPD_500_INTERNAL_SERVER_ERROR,
+                                       "Status response too large");
+        }
         offset += std::snprintf(
             json.data() + offset, json.size() - offset, "%s%.1f",
             index == 0 ? "" : ",", metrics.spectrum_dbfs[index]);
     }
+    if (offset < 0 || static_cast<size_t>(offset) + 3 > json.size()) {
+        return httpd_resp_send_err(request, HTTPD_500_INTERNAL_SERVER_ERROR,
+                                   "Status response too large");
+    }
     std::snprintf(json.data() + offset, json.size() - offset, "]}");
 
+    httpd_resp_set_type(request, "application/json");
+    httpd_resp_set_hdr(request, "Cache-Control", "no-store");
+    return httpd_resp_sendstr(request, json.data());
+}
+
+esp_err_t WebServer::meters_handler(httpd_req_t* request) {
+    auto* self = static_cast<WebServer*>(request->user_ctx);
+    // Snapshot only: no DSP, Wi-Fi queries, task scans or Sonos locks here.
+    const AudioMetrics metrics = self->audio_.meters();
+    std::array<char, 768> json = {};
+    int offset = std::snprintf(
+        json.data(), json.size(),
+        "{\"clock_locked\":%s,\"signal_present\":%s,"
+        "\"peak_l\":%.2f,\"peak_r\":%.2f,\"rms_l\":%.2f,\"rms_r\":%.2f,"
+        "\"meter_updates\":%u,\"spectrum_updates\":%u,"
+        "\"meter_updated_ms\":%u,\"spectrum_updated_ms\":%u,"
+        "\"capture_age_ms\":%u,\"spectrum\":[",
+        metrics.clock_locked ? "true" : "false",
+        metrics.signal_present ? "true" : "false",
+        metrics.peak_left_dbfs, metrics.peak_right_dbfs,
+        metrics.rms_left_dbfs, metrics.rms_right_dbfs,
+        static_cast<unsigned>(metrics.meter_updates),
+        static_cast<unsigned>(metrics.spectrum_updates),
+        static_cast<unsigned>(metrics.meter_updated_ms),
+        static_cast<unsigned>(metrics.spectrum_updated_ms),
+        static_cast<unsigned>(metrics.capture_age_ms));
+    for (size_t index = 0; index < metrics.spectrum_dbfs.size(); ++index) {
+        if (offset < 0 || static_cast<size_t>(offset) >= json.size()) {
+            return httpd_resp_send_err(request, HTTPD_500_INTERNAL_SERVER_ERROR,
+                                       "Meter response too large");
+        }
+        offset += std::snprintf(json.data() + offset, json.size() - offset,
+                                "%s%.1f", index == 0 ? "" : ",",
+                                metrics.spectrum_dbfs[index]);
+    }
+    if (offset < 0 || static_cast<size_t>(offset) + 3 > json.size()) {
+        return httpd_resp_send_err(request, HTTPD_500_INTERNAL_SERVER_ERROR,
+                                   "Meter response too large");
+    }
+    std::snprintf(json.data() + offset, json.size() - offset, "]}");
     httpd_resp_set_type(request, "application/json");
     httpd_resp_set_hdr(request, "Cache-Control", "no-store");
     return httpd_resp_sendstr(request, json.data());
@@ -267,6 +351,44 @@ bool WebServer::form_value(const char* form,
 void WebServer::delayed_restart(void*) {
     vTaskDelay(pdMS_TO_TICKS(1200));
     esp_restart();
+}
+
+esp_err_t WebServer::eq_handler(httpd_req_t* request) {
+    auto* self = static_cast<WebServer*>(request->user_ctx);
+    std::array<char, 256> form = {};
+    char name[16] = {};
+    if (!read_form(request, form.data(), form.size()) ||
+        !form_value(form.data(), "preset", name, sizeof(name))) {
+        return httpd_resp_send_err(request, HTTPD_400_BAD_REQUEST, "Missing EQ preset");
+    }
+    const auto match = std::find_if(kEqPresetNames.begin(), kEqPresetNames.end(),
+        [&](const char* preset) { return std::strcmp(preset, name) == 0; });
+    if (match == kEqPresetNames.end()) {
+        return httpd_resp_send_err(request, HTTPD_400_BAD_REQUEST, "Unknown EQ preset");
+    }
+    const auto index = static_cast<size_t>(match - kEqPresetNames.begin());
+    const auto preset = static_cast<EqPreset>(index);
+    EqGains gains = {};
+    if (preset == EqPreset::Custom) {
+        for (size_t i = 0; i < gains.size(); ++i) {
+            char key[12] = {}, value[8] = {};
+            std::snprintf(key, sizeof(key), "gain%u", static_cast<unsigned>(i));
+            if (!form_value(form.data(), key, value, sizeof(value))) {
+                return httpd_resp_send_err(request, HTTPD_400_BAD_REQUEST, "Missing EQ band");
+            }
+            char* end = nullptr;
+            const long gain = std::strtol(value, &end, 10);
+            if (end == value || *end != '\0' || gain < -kEqGainLimit || gain > kEqGainLimit) {
+                return httpd_resp_send_err(request, HTTPD_400_BAD_REQUEST, "EQ gain must be -6 to +6 dB");
+            }
+            gains[i] = static_cast<int8_t>(gain);
+        }
+    } else {
+        gains = kEqPresetGains[index];
+    }
+    self->audio_.set_eq(preset, gains);
+    httpd_resp_set_status(request, "204 No Content");
+    return httpd_resp_send(request, nullptr, 0);
 }
 
 esp_err_t WebServer::wifi_handler(httpd_req_t* request) {
@@ -370,18 +492,20 @@ esp_err_t WebServer::sonos_stop_handler(httpd_req_t* request) {
 bool WebServer::start() {
     httpd_config_t config = HTTPD_DEFAULT_CONFIG();
     config.server_port = 80;
-    config.max_uri_handlers = 12;
+    config.max_uri_handlers = 13;
     config.stack_size = 7168;
     config.lru_purge_enable = true;
     if (httpd_start(&server_, &config) != ESP_OK) {
         return false;
     }
 
-    const std::array<httpd_uri_t, 11> routes = {{
+    const std::array<httpd_uri_t, 13> routes = {{
         {"/", HTTP_GET, index_handler, this},
         {"/style.css", HTTP_GET, css_handler, this},
         {"/app.js", HTTP_GET, js_handler, this},
         {"/api/status", HTTP_GET, status_handler, this},
+        {"/api/meters", HTTP_GET, meters_handler, this},
+        {"/api/eq", HTTP_POST, eq_handler, this},
         {"/api/wifi/scan", HTTP_GET, wifi_scan_handler, this},
         {"/api/wifi", HTTP_POST, wifi_handler, this},
         {"/api/sonos/discover", HTTP_GET, sonos_discover_handler, this},

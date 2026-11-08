@@ -23,39 +23,83 @@ inline constexpr char kIndex[] = R"CDTS(<!doctype html>
   </header>
 
   <main>
-    <section class="meters panel">
+    <section id="liveAudioPanel" class="meters panel" aria-labelledby="liveAudioTitle">
       <div class="visual-heading">
         <div>
           <p class="eyebrow">Live audio</p>
-          <h2>Digital input monitor</h2>
+          <h2 id="liveAudioTitle">Digital input monitor</h2>
         </div>
-        <div class="visual-tools">
-          <p id="format">44.1 kHz - 16-bit - stereo FLAC</p>
-          <div class="visual-toggle" role="group" aria-label="Audio visualizer">
-            <button id="showVu" type="button" data-visual="vu" aria-pressed="true">VU meters</button>
-            <button id="showSpectrum" class="secondary" type="button" data-visual="spectrum" aria-pressed="false">Spectrum</button>
-          </div>
-        </div>
+        <p id="format">44.1 kHz - 16-bit - stereo FLAC</p>
       </div>
       <div id="spectrumView" class="visual-view" hidden>
-        <canvas id="spectrum" width="1000" height="230" aria-label="Live audio spectrum"></canvas>
+        <div class="spectrum-rack">
+          <div class="rack-legend"><span>31 BAND REAL-TIME ANALYSER</span><span>20 Hz — 20 kHz · L/R energy</span></div>
+          <canvas id="spectrum" width="1100" height="290" aria-label="Live 31-band LED audio spectrum"></canvas>
+        </div>
+        <div class="spectrum-controls"><label for="spectrumGain">Display sensitivity</label><input id="spectrumGain" type="range" min="-12" max="24" step="3" value="0"><output id="spectrumGainValue">0 dB · visuals only</output></div>
       </div>
       <div id="vuView" class="visual-view">
         <div class="vu-pair">
-          <div class="vu"><canvas id="vuLeft" width="420" height="210" aria-label="Left channel VU meter"></canvas><span>L</span></div>
-          <div class="vu"><canvas id="vuRight" width="420" height="210" aria-label="Right channel VU meter"></canvas><span>R</span></div>
+          <div class="vu"><canvas id="vuLeft" width="420" height="210" aria-label="Left channel VU meter"></canvas><div class="vu-readout"><span>L RMS</span><output id="vuLeftValue">-- dBFS</output></div></div>
+          <div class="vu"><canvas id="vuRight" width="420" height="210" aria-label="Right channel VU meter"></canvas><div class="vu-readout"><span>R RMS</span><output id="vuRightValue">-- dBFS</output></div></div>
         </div>
       </div>
-      <p class="visual-note">30 fps display smoothing runs in this browser; the lossless stream remains the device priority.</p>
+      <div class="peak-meters" aria-label="Stereo LED peak levels">
+        <div class="peak-row"><span>L peak</span><div class="peak-track"><div class="peak-glow" aria-hidden="true"><div id="glowLeft"></div></div><div id="peakLeft" class="peak-fill"></div><i id="holdLeft" class="peak-hold"></i></div><output id="peakLeftValue">-- dBFS</output></div>
+        <div class="peak-row"><span>R peak</span><div class="peak-track"><div class="peak-glow" aria-hidden="true"><div id="glowRight"></div></div><div id="peakRight" class="peak-fill"></div><i id="holdRight" class="peak-hold"></i></div><output id="peakRightValue">-- dBFS</output></div>
+      </div>
+      <div class="visual-tools">
+        <span class="faceplate-brand" aria-label="Sonos compatible DIY CD streamer">
+          <span class="retro-wordmark" aria-hidden="true">SONOS</span>
+          <span class="nameplate-model">CD-S1 <small>LOSSLESS NETWORK TRANSPORT</small></span>
+          <span class="nameplate-diy">DIY · SONOS COMPATIBLE</span>
+        </span>
+        <div class="visual-toggle" role="group" aria-label="Audio visualizer">
+          <button id="showVu" type="button" data-visual="vu" aria-pressed="true">VU meters</button>
+          <button id="showSpectrum" class="secondary" type="button" data-visual="spectrum" aria-pressed="false">Spectrum</button>
+        </div>
+        <button id="fullscreenAudio" class="secondary fullscreen-button" type="button" aria-controls="liveAudioPanel" aria-pressed="false" title="Expand only the Live Audio panel">⛶ Fullscreen</button>
+      </div>
+      <p id="meterHealth" class="visual-note" role="status" hidden></p>
+      <p id="fullscreenHint" class="fullscreen-hint" role="status" hidden></p>
     </section>
 
-    <section class="grid">
+    <section id="dashboardControls" class="grid">
+      <article id="graphicEq" class="panel eq-panel">
+        <p class="eyebrow">CD stream</p>
+        <h2>Ten-band graphic EQ</h2>
+        <form id="eqForm">
+          <fieldset id="eqControls" disabled>
+            <div class="eq-glass">
+              <div class="rack-legend"><span>10 BAND GRAPHIC EQUALIZER</span><span>±6 dB · 0 dB centre</span></div>
+              <div id="eqBands" class="eq-bands" aria-label="EQ band gains"></div>
+            </div>
+            <div class="eq-toolbar">
+              <label for="eqPreset">Preset</label>
+              <select id="eqPreset" name="preset">
+                <option value="flat">Flat (bypass)</option>
+                <option value="warm">Warm</option>
+                <option value="bass-boost">Bass Boost</option>
+                <option value="vocal">Vocal</option>
+                <option value="bright">Bright</option>
+                <option value="custom">Custom</option>
+              </select>
+              <button type="submit">Apply EQ</button>
+            </div>
+          </fieldset>
+        </form>
+        <p id="eqSummary" class="help">Waiting for EQ status…</p>
+        <p id="eqMessage" class="help" role="status" hidden></p>
+      </article>
+
       <article class="panel">
         <p class="eyebrow">Lossless stream</p>
         <h2>Playback</h2>
         <dl>
           <div><dt>Signal</dt><dd id="signal">Silent</dd></div>
           <div><dt>Clients</dt><dd id="clients">0</dd></div>
+          <div><dt>Sonos listeners</dt><dd id="sonosClients">--</dd></div>
+          <div><dt>Other listeners</dt><dd id="otherClients">--</dd></div>
           <div><dt>Buffer overruns</dt><dd id="overruns">0</dd></div>
         </dl>
         <audio id="localAudio" controls preload="none"></audio>
@@ -89,6 +133,11 @@ inline constexpr char kIndex[] = R"CDTS(<!doctype html>
           <button type="submit">Save and restart</button>
         </form>
         <p id="networkState" class="help">Checking network...</p>
+        <dl>
+          <div><dt>Access point BSSID</dt><dd id="wifiBssid">--</dd></div>
+          <div><dt>Wi-Fi channel</dt><dd id="wifiChannel">--</dd></div>
+          <div><dt>Reconnects since boot</dt><dd id="wifiReconnects">--</dd></div>
+        </dl>
       </article>
 
       <article class="panel">
@@ -99,15 +148,23 @@ inline constexpr char kIndex[] = R"CDTS(<!doctype html>
           <div><dt>Free heap</dt><dd id="heap">--</dd></div>
           <div><dt>CPU load</dt><dd id="cpu">--</dd></div>
           <div><dt>CPU cores</dt><dd id="cpuCores">--</dd></div>
-          <div><dt>Stream delivery</dt><dd id="delivery">--</dd></div>
+          <div><dt>Stream delivery (all clients)</dt><dd id="delivery">--</dd></div>
+          <div><dt>Capture delivery</dt><dd id="captureRate">--</dd></div>
           <div><dt>Source LRCLK</dt><dd id="sourceRate">--</dd></div>
           <div><dt>Captured</dt><dd id="captured">--</dd></div>
-          <div><dt>I2S timeouts</dt><dd id="timeouts">0</dd></div>
+          <div><dt>Empty I2S waits</dt><dd id="timeouts">0</dd></div>
+          <div><dt>DMA buffers lost</dt><dd id="dmaLoss">--</dd></div>
+          <div><dt>Capture blocks lost</dt><dd id="publishLoss">--</dd></div>
+          <div><dt>Capture interruptions</dt><dd id="clockLoss">--</dd></div>
+          <div><dt>Last captured block</dt><dd id="captureAge">--</dd></div>
           <div><dt>Capture stack free</dt><dd id="captureStack">--</dd></div>
           <div><dt>Analysis stack free</dt><dd id="analysisStack">--</dd></div>
           <div><dt>Analysis updates</dt><dd id="analysisRuns">0</dd></div>
+          <div><dt>Meter / spectrum updates</dt><dd id="meterUpdates">--</dd></div>
+          <div><dt>Analysis block time / maximum</dt><dd id="analysisTime">--</dd></div>
           <div><dt>Firmware</dt><dd id="version">--</dd></div>
         </dl>
+        <p class="help">Empty waits can occur when the CD clock stops; they are not a count of corrupted samples. Lost-buffer counters and capture delivery help identify interruptions. Counters reset on reboot.</p>
       </article>
     </section>
   </main>
@@ -179,13 +236,98 @@ h2 { margin-bottom: 18px; font-weight: 500; }
 .visual-toggle button { margin: 0; padding: 7px 11px; border-color: transparent; background: transparent; color: var(--muted); }
 .visual-toggle button[aria-pressed="true"] { background: var(--amber); color: #17110a; }
 .visual-view[hidden] { display: none !important; }
-#spectrum { width: 100%; height: 170px; display: block; margin: 12px 0 4px; }
+.spectrum-rack { margin-top: 12px; padding: 12px 14px 7px; border: 1px solid #48504a; border-radius: 6px; background: linear-gradient(#171d19, #050706); box-shadow: inset 0 1px #8b9c8f33, inset 0 -2px #000; }
+.rack-legend { display: flex; justify-content: space-between; gap: 12px; color: #b1c9be; font-size: 10px; letter-spacing: .12em; margin-bottom: 7px; }
+#spectrum { width: 100%; height: auto; display: block; border: 1px solid #000; }
+.spectrum-controls { display: flex; align-items: center; gap: 12px; font-size: 12px; color: var(--muted); margin: 8px 0; }
+.spectrum-controls label { margin: 0; }
+.spectrum-controls input { width: 140px; padding: 0; accent-color: #6fffc5; }
+.spectrum-controls output { font-variant-numeric: tabular-nums; }
 .vu-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .vu { position: relative; }
 .vu canvas { display: block; width: 100%; height: auto; }
-.vu span { position: absolute; bottom: 8px; left: 50%; color: var(--muted); }
+.vu-readout { display: flex; justify-content: space-between; color: var(--muted); padding: 2px 10px 8px; font-size: 12px; font-variant-numeric: tabular-nums; }
+.peak-meters { display: grid; gap: 7px; margin-top: 12px; }
+.peak-row { display: grid; grid-template-columns: 44px 1fr 88px; align-items: center; gap: 10px; font-size: 12px; color: var(--muted); }
+.peak-row output { text-align: right; font-variant-numeric: tabular-nums; }
+.peak-track {
+  --led-gap: 4px; --led-step: calc(100% / 48);
+  --led-mask: repeating-linear-gradient(90deg, #000 0 calc(var(--led-step) - var(--led-gap)), transparent calc(var(--led-step) - var(--led-gap)) var(--led-step));
+  --led-colours: linear-gradient(90deg, #20ed86 0 72.916667%, #ffb928 72.916667% 89.583333%, #ff3a23 89.583333% 100%);
+  height: 11px; position: relative; isolation: isolate;
+}
+.peak-track::before, .peak-fill, .peak-glow > div {
+  position: absolute; inset: 0;
+  -webkit-mask-image: var(--led-mask); mask-image: var(--led-mask);
+}
+.peak-track::before {
+  content: '';
+  background: linear-gradient(180deg, #ffffff20 0 12%, transparent 25% 60%, #0009 100%), linear-gradient(90deg, #123e26 0 72.916667%, #4d350a 72.916667% 89.583333%, #4a170e 89.583333% 100%);
+  box-shadow: inset 0 1px #ffffff12, inset 0 -2px #0008;
+}
+.peak-fill {
+  background: radial-gradient(ellipse at 45% 40%, #ffffcc80, transparent 70%), linear-gradient(180deg, #fff7 0 12%, #fff1 24% 60%, #0005 85%, #0009 100%), var(--led-colours);
+  background-size: var(--led-step) 100%, 100% 100%, 100% 100%;
+  box-shadow: inset 0 1px #ffffcaaa, inset 0 -1px #0008;
+  clip-path: inset(0 100% 0 0);
+}
+/* Blur just two narrow rows, not every LED or the whole panel. The blur
+   wrapper is outside the segmented mask so light can spill into the gaps. */
+.peak-glow { position: absolute; inset: 0; filter: blur(3px); opacity: .72; pointer-events: none; }
+.peak-glow > div { background: var(--led-colours); clip-path: inset(0 100% 0 0); }
+.peak-hold {
+  position: absolute; top: 0; bottom: 0; width: calc(var(--led-step) - var(--led-gap)); left: 0; opacity: 0;
+  color: #20ed86;
+  background: radial-gradient(ellipse at 45% 40%, #ffffcc80, transparent 70%), linear-gradient(180deg, #fff7 0 12%, #fff1 24% 60%, #0005 85%, #0009 100%), currentColor;
+  box-shadow: inset 0 1px #ffffcaaa, inset 0 -1px #0008, 0 0 3px currentColor;
+}
 .visual-note { color: var(--muted); font-size: 12px; margin: 8px 0 0; text-align: right; }
+.visual-note[hidden] { display: none; }
+.fullscreen-button { margin: 0; white-space: nowrap; }
+.fullscreen-hint { margin: 5px 0 0; color: var(--muted); font-size: 12px; text-align: right; }
+.fullscreen-hint[hidden] { display: none; }
+body.audio-fullscreen { overflow: hidden; }
+body.audio-fullscreen > header, body.audio-fullscreen #dashboardControls { visibility: hidden; }
+#liveAudioPanel::backdrop { background: #101311; }
+#liveAudioPanel.is-fullscreen {
+  position: fixed; inset: 0; z-index: 1000;
+  width: 100%; height: 100vh; height: 100dvh;
+  max-width: none; margin: 0; border: 0; border-radius: 0;
+  padding: max(16px, env(safe-area-inset-top)) max(20px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom)) max(20px, env(safe-area-inset-left));
+  background: #111613;
+  display: flex; flex-direction: column; gap: 8px; overflow: auto;
+}
+#liveAudioPanel.is-fullscreen .visual-heading { flex: 0 0 auto; align-items: center; }
+#liveAudioPanel.is-fullscreen .visual-view { flex: 1 0 auto; display: flex; flex-direction: column; justify-content: center; min-height: 0; }
+#liveAudioPanel.is-fullscreen .spectrum-rack { margin-top: 0; }
+#liveAudioPanel.is-fullscreen #spectrum { max-height: calc(100dvh - 230px); min-height: 130px; object-fit: contain; }
+#liveAudioPanel.is-fullscreen .vu-pair { align-items: center; }
+#liveAudioPanel.is-fullscreen .vu canvas { max-height: calc(100dvh - 240px); min-height: 130px; object-fit: contain; }
+#liveAudioPanel.is-fullscreen .peak-track { height: 18px; }
+#liveAudioPanel.is-fullscreen .visual-note { margin-top: 0; }
+#liveAudioPanel.is-fullscreen .peak-meters { flex: 0 0 auto; }
 .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; padding-bottom: 32px; }
+.eq-panel { grid-column: 1 / -1; }
+.eq-panel fieldset { border: 0; margin: 0; padding: 0; min-width: 0; }
+.eq-toolbar { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 12px; margin-top: 16px; }
+.eq-toolbar select { width: min(12rem, 100%); }
+.eq-toolbar label, .eq-toolbar button { margin: 0; }
+.eq-bands { display: grid; grid-template-columns: repeat(10, minmax(0, 1fr)); gap: 14px 8px; padding-top: 5px; }
+.eq-band { min-width: 0; display: grid; justify-items: center; gap: 5px; margin: 0; color: #b1c9be; font-size: .72rem; white-space: nowrap; }
+.eq-track { position: relative; display: grid; justify-items: center; width: 100%; height: 132px; }
+.eq-track:focus-within { outline: 1px solid #6fffc5; outline-offset: 2px; }
+.eq-track input { position: absolute; inset: 0; margin: 0; width: 100%; height: 100%; padding: 0; writing-mode: vertical-lr; direction: rtl; opacity: 0; cursor: ns-resize; }
+.eq-ladder { display: grid; grid-template-rows: repeat(13, 1fr); gap: 3px; width: min(70%, 56px); }
+.eq-ladder i { background: #10231d; border: 1px solid #193129; border-radius: 1px; }
+.eq-ladder i.zero { border-color: #497563; }
+.eq-ladder i.lit { background: #3aab7d; border-color: #4dd69b; }
+.eq-ladder i.position { background: #6fffc5; border-color: #b2ffdd; box-shadow: 0 0 6px #6fffc577; }
+.eq-band output { color: #8be2b8; font-variant-numeric: tabular-nums; }
+@media (forced-colors: active) {
+  .eq-track input { opacity: 1; }
+  .eq-ladder { visibility: hidden; }
+}
+@media (max-width: 640px) { .eq-bands { grid-template-columns: repeat(5, minmax(0, 1fr)); } }
 dl { margin: 0 0 18px; }
 dl div { display: flex; justify-content: space-between; gap: 16px; padding: 8px 0; border-bottom: 1px solid var(--edge); }
 dt { color: var(--muted); }
@@ -209,34 +351,231 @@ button:disabled { opacity: .42; cursor: not-allowed; }
 audio { width: 100%; margin: 4px 0 8px; }
 .help { color: var(--muted); margin: 12px 0 0; }
 
+/* A passive hi-fi faceplate: all texture and reflections are static CSS.
+   Keep the existing canvas cadence and the audio/telemetry path unchanged. */
+:is(#liveAudioPanel, #graphicEq) {
+  --muted: #454137;
+  --faceplate: repeating-linear-gradient(0deg, #fff1 0 1px, #382b1808 1px 2px, transparent 2px 4px), linear-gradient(105deg, #b5ad9b, #e2dac7 24%, #c7bda7 65%, #ddd5c5);
+  position: relative; padding: 22px 28px 20px; border-radius: 3px;
+  color: #272720; border: 1px solid #9a9485; background: var(--faceplate);
+  box-shadow: inset 0 2px 1px #fff9, inset 0 -3px 2px #574e3d88, 0 12px 22px #0008;
+}
+#liveAudioPanel .visual-heading { align-items: center; gap: 16px; margin-bottom: 17px; }
+#liveAudioPanel .visual-heading > div { flex: 1; }
+:is(#liveAudioPanel, #graphicEq) .eyebrow { color: #434036; font-size: 9px; letter-spacing: .22em; }
+:is(#liveAudioPanel, #graphicEq) h2 { padding: 5px 12px; background: #252824; color: #dbd6c7; font-size: 13px; letter-spacing: .17em; text-transform: uppercase; font-weight: 400; }
+#liveAudioPanel #format { color: #454137; margin: 0; font-size: 11px; text-transform: uppercase; letter-spacing: .06em; }
+#liveAudioPanel .spectrum-rack, #liveAudioPanel .vu-pair, #graphicEq .eq-glass {
+  position: relative; margin-top: 0; padding: 17px 20px 10px; border: 5px solid #272a25; border-radius: 1px;
+  background: #070c09; box-shadow: 0 0 0 1px #a8a492, 0 2px 0 2px #eee5d0, inset 0 3px 9px #000, 0 5px 9px #0006;
+}
+#liveAudioPanel .spectrum-rack::after, #liveAudioPanel .vu-pair::after, #graphicEq .eq-glass::after {
+  content: ''; position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(108deg, transparent 8%, #d4e6ce08 24%, transparent 25% 59%, #fff04a03 60%, transparent 77%), linear-gradient(#dce8d008, transparent 28%);
+  box-shadow: inset 0 0 12px #0008;
+}
+:is(#liveAudioPanel, #graphicEq) .rack-legend { color: #8c9b88; font-size: 9px; letter-spacing: .16em; }
+#liveAudioPanel .vu-readout { color: #aeb7a7; }
+#liveAudioPanel .spectrum-controls { margin: 15px 0 10px; font-size: 10px; text-transform: uppercase; letter-spacing: .07em; }
+#liveAudioPanel .spectrum-controls input { accent-color: #353a31; height: 16px; }
+#liveAudioPanel .peak-meters { padding: 13px 15px; background: #101610; border: 3px solid #363a31; box-shadow: inset 0 2px 5px #000, 0 1px #f7edda; margin-top: 14px; }
+#liveAudioPanel .peak-row { color: #b7c0ab; font-size: 10px; letter-spacing: .06em; }
+#liveAudioPanel .visual-tools { align-items: center; justify-content: flex-end; gap: 18px; margin-top: 20px; }
+.faceplate-brand { margin-right: auto; display: grid; grid-template-columns: auto auto; align-items: center; column-gap: 15px; color: #242720; text-shadow: 0 1px #f5eed066; }
+.retro-wordmark { font: 900 28px/1 Arial, Helvetica, sans-serif; letter-spacing: .12em; transform: scaleX(1.04); transform-origin: left center; }
+.nameplate-model { border-left: 1px solid #55584b; padding-left: 13px; font-size: 13px; font-weight: 600; line-height: 1.3; letter-spacing: .13em; }
+.faceplate-brand small { display: block; font-size: 7px; font-weight: 500; letter-spacing: .12em; }
+.nameplate-diy { grid-column: 1 / -1; margin-top: 5px; font-size: 7px; letter-spacing: .17em; color: #555448; }
+#liveAudioPanel .visual-toggle { padding: 0; border: 0; background: transparent; gap: 12px; }
+#liveAudioPanel .visual-tools button, #graphicEq .eq-toolbar button {
+  position: relative; margin: 0; padding: 8px 12px; border: 2px solid #34372f; border-radius: 1px;
+  background: linear-gradient(#ece8dc 0 22%, #bab8aa 24% 77%, #85877b 79%); color: #252a21;
+  box-shadow: 0 2px 0 #f6ecd2, inset 0 1px #fff8, 0 2px 4px #0005;
+  font-size: 10px; letter-spacing: .07em; text-transform: uppercase;
+}
+#liveAudioPanel .visual-toggle button::before { content: ''; display: inline-block; width: 6px; height: 4px; margin-right: 7px; vertical-align: 2px; background: #344e32; border: 1px solid #293325; }
+#liveAudioPanel .visual-toggle button[aria-pressed="true"]::before { background: #7fff7a; box-shadow: 0 0 4px #58ff69; }
+#liveAudioPanel .visual-tools button:hover { filter: brightness(1.08); }
+#liveAudioPanel button:focus-visible, #liveAudioPanel input:focus-visible { outline: 2px solid #205d34; outline-offset: 4px; }
+#liveAudioPanel.is-fullscreen { background: var(--faceplate); }
+#liveAudioPanel.is-fullscreen .visual-tools { flex: 0 0 auto; margin-top: 5px; }
+
 @media (max-width: 720px) {
   header, .visual-heading { align-items: flex-start; flex-direction: column; }
   .grid, .vu-pair { grid-template-columns: 1fr; }
   .visual-tools { width: 100%; align-items: flex-start; justify-content: space-between; }
   .visual-note { text-align: left; }
+  .spectrum-rack { padding: 8px 3px 3px; }
+  .rack-legend { font-size: 8px; letter-spacing: .03em; }
+  .spectrum-controls { flex-wrap: wrap; gap: 8px; }
+  .peak-track { --led-gap: 1px; }
+  :is(#liveAudioPanel, #graphicEq) { padding: 16px 12px; }
+  #liveAudioPanel .visual-heading { align-items: stretch; gap: 9px; }
+  #liveAudioPanel .spectrum-rack, #liveAudioPanel .vu-pair, #graphicEq .eq-glass { padding: 10px 4px 5px; border-width: 3px; }
+  :is(#liveAudioPanel, #graphicEq) .rack-legend { font-size: 7px; letter-spacing: .02em; }
+  #liveAudioPanel .visual-tools { gap: 12px; justify-content: space-between; }
+  #liveAudioPanel .faceplate-brand { flex-basis: 100%; }
+  #liveAudioPanel .peak-meters { padding: 12px 7px; }
+  #liveAudioPanel .peak-row { grid-template-columns: 36px 1fr 65px; gap: 6px; }
+  #liveAudioPanel.is-fullscreen .visual-heading { align-items: flex-start; gap: 8px; }
+  #liveAudioPanel.is-fullscreen #format { display: none; }
+  #liveAudioPanel.is-fullscreen .vu canvas { max-height: calc((100dvh - 260px) / 2); }
+  #liveAudioPanel.is-fullscreen .visual-note { font-size: 10px; }
+}
+@media (max-height: 520px) and (orientation: landscape) {
+  #liveAudioPanel.is-fullscreen { padding: 8px 16px; gap: 4px; }
+  #liveAudioPanel.is-fullscreen .visual-heading { flex-direction: row; gap: 8px; }
+  #liveAudioPanel.is-fullscreen .visual-heading h2,
+  #liveAudioPanel.is-fullscreen #format { display: none; }
+  #liveAudioPanel.is-fullscreen .visual-heading { margin-bottom: 0; }
+  #liveAudioPanel.is-fullscreen .faceplate-brand { flex-basis: auto; }
+  #liveAudioPanel.is-fullscreen .visual-tools { margin-top: 0; }
+  #liveAudioPanel.is-fullscreen .peak-meters { padding: 6px 12px; }
+  #liveAudioPanel.is-fullscreen .visual-tools { width: auto; }
+  #liveAudioPanel.is-fullscreen .vu-pair { grid-template-columns: 1fr 1fr; }
+  #liveAudioPanel.is-fullscreen #spectrum,
+  #liveAudioPanel.is-fullscreen .vu canvas { max-height: calc(100dvh - 160px); min-height: 80px; }
+  #liveAudioPanel.is-fullscreen .spectrum-controls { margin: 4px 0; }
+  #liveAudioPanel.is-fullscreen .peak-meters { margin-top: 4px; gap: 4px; }
 }
 )CDTS";
 
 inline constexpr char kApp[] = R"CDTS(const $ = id => document.getElementById(id);
-const frequencies = ['63', '100', '160', '250', '400', '630', '1k', '1.6k', '2.5k', '4k', '6.3k', '8k', '10k', '12.5k', '16k', '20k'];
-const POLL_MS = 250;
-const HIDDEN_POLL_MS = 2000;
-const FRAME_MS = 1000 / 30;
+const frequencies = ['20', '25', '31.5', '40', '50', '63', '80', '100', '125', '160', '200', '250', '315', '400', '500', '630', '800', '1k', '1.25k', '1.6k', '2k', '2.5k', '3.15k', '4k', '5k', '6.3k', '8k', '10k', '12.5k', '16k', '20k'];
+const POLL_MS = 100;
+const STATUS_MS = 2000;
+const HIDDEN_POLL_MS = 5000;
+const FRAME_MS = 1000 / 60;
+const STALE_MS = 600;
+const PEAK_LED_COUNT = 48;
 const vuFaceCache = new WeakMap();
+const spectrumFaceCache = new WeakMap();
 let previousStatus = null;
 let pollTimer = 0;
 let pollInFlight = false;
 let lastFrameAt = 0;
+let nextStatusAt = 0;
+let eqDirty = false;
+let eqSaving = false;
+const eqSliders = [];
+let lastMeterAt = -Infinity;
+let lastMeterUpdate = null;
+let lastMeterAdvanceAt = -Infinity;
+let lastReadoutAt = 0;
+const audioFullscreen = {fallback: false, busy: false, active: false, cancelRequested: false,
+  returnFocus: null, scroll: [0, 0], background: []};
 
 const visuals = {
   mode: localStorage.getItem('cdts-visual') === 'spectrum' ? 'spectrum' : 'vu',
-  spectrumTarget: new Array(16).fill(-96),
-  spectrumDisplay: new Array(16).fill(-96),
+  spectrumTarget: new Array(frequencies.length).fill(-96),
+  spectrumDisplay: new Array(frequencies.length).fill(-96),
+  spectrumHold: new Array(frequencies.length).fill(-96),
+  spectrumHoldUntil: new Array(frequencies.length).fill(0),
+  spectrumGain: 0,
   vuTarget: [-96, -96],
-  vuDisplay: [-96, -96]
+  vuDisplay: [-96, -96],
+  peakTarget: [-96, -96],
+  peakDisplay: [-96, -96],
+  peakHold: [-96, -96],
+  peakHoldUntil: [0, 0]
 };
 
+function isAudioFullscreen() {
+  return document.fullscreenElement === $('liveAudioPanel') || audioFullscreen.fallback;
+}
+
+function syncAudioFullscreen() {
+  const active = isAudioFullscreen();
+  const button = $('fullscreenAudio');
+  if (active && !audioFullscreen.active) {
+    audioFullscreen.returnFocus ??= document.activeElement;
+    audioFullscreen.background = [...document.querySelectorAll('body > header, #dashboardControls')]
+      .map(element => ({element, inert: element.inert}));
+    audioFullscreen.background.forEach(({element}) => { element.inert = true; });
+  }
+  $('liveAudioPanel').classList.toggle('is-fullscreen', active);
+  document.body.classList.toggle('audio-fullscreen', active);
+  button.setAttribute('aria-pressed', String(active));
+  button.textContent = active ? '↙ Exit fullscreen' : '⛶ Fullscreen';
+  button.title = active ? 'Return to the dashboard (Escape)' : 'Expand only the Live Audio panel';
+  $('fullscreenHint').hidden = !active;
+  $('fullscreenHint').textContent = audioFullscreen.fallback
+    ? 'Panel-only view · Exit fullscreen or press Escape to return.'
+    : 'Press Escape or Exit fullscreen to return to the dashboard.';
+  if (!active && audioFullscreen.active) {
+    audioFullscreen.background.forEach(({element, inert}) => { element.inert = inert; });
+    audioFullscreen.background = [];
+  }
+  // Native fullscreenchange may arrive before exitFullscreen() resolves and
+  // before the toggle button is enabled again; restore focus only afterwards.
+  if (!active && !audioFullscreen.busy && audioFullscreen.returnFocus) {
+    const focus = audioFullscreen.returnFocus;
+    if (focus?.isConnected) focus.focus({preventScroll: true});
+    audioFullscreen.returnFocus = null;
+    window.scrollTo(...audioFullscreen.scroll);
+  }
+  audioFullscreen.active = active;
+}
+
+async function toggleAudioFullscreen() {
+  if (audioFullscreen.busy) return;
+  audioFullscreen.busy = true;
+  const panel = $('liveAudioPanel');
+  const button = $('fullscreenAudio');
+  const entering = !isAudioFullscreen();
+  if (entering) {
+    audioFullscreen.cancelRequested = false;
+    audioFullscreen.returnFocus = document.activeElement;
+    audioFullscreen.scroll = [window.scrollX, window.scrollY];
+  }
+  button.disabled = true;
+  try {
+    if (document.fullscreenElement === panel) {
+      await document.exitFullscreen();
+    } else if (audioFullscreen.fallback) {
+      audioFullscreen.fallback = false;
+    } else {
+      // Request only this element. Embedded/mobile browsers may deny native
+      // fullscreen, so retain an in-page panel-only mode with the same exit.
+      try {
+        if (!panel.requestFullscreen || document.fullscreenEnabled === false) throw new Error('Unavailable');
+        await panel.requestFullscreen();
+        if (audioFullscreen.cancelRequested && document.fullscreenElement === panel) await document.exitFullscreen();
+      } catch (_) {
+        if (!audioFullscreen.cancelRequested) audioFullscreen.fallback = true;
+      }
+    }
+  } catch (_) {
+    // If native exit is refused, leave the button usable and let Escape exit.
+  } finally {
+    audioFullscreen.busy = false;
+    button.disabled = false;
+    syncAudioFullscreen();
+    if (entering && isAudioFullscreen()) button.focus({preventScroll: true});
+  }
+}
+
+function audioFullscreenKeydown(event) {
+  if (event.key === 'Escape' && audioFullscreen.busy) audioFullscreen.cancelRequested = true;
+  if (!isAudioFullscreen()) return;
+  if (event.key === 'Escape' && audioFullscreen.fallback) {
+    event.preventDefault();
+    audioFullscreen.fallback = false;
+    syncAudioFullscreen();
+  } else if (event.key === 'Tab' && audioFullscreen.fallback) {
+    const controls = [...$('liveAudioPanel').querySelectorAll('button, input, [tabindex="0"]')]
+      .filter(element => !element.disabled && element.getClientRects().length);
+    const first = controls[0], last = controls[controls.length - 1];
+    if (first && event.shiftKey && (document.activeElement === first || !controls.includes(document.activeElement))) {
+      event.preventDefault(); last.focus();
+    } else if (last && !event.shiftKey && (document.activeElement === last || !controls.includes(document.activeElement))) {
+      event.preventDefault(); first.focus();
+    }
+  }
+}
+
 function finiteDb(value) {
+  if (value == null || value === '') return -96;
   return Number.isFinite(Number(value)) ? Math.max(-96, Math.min(3, Number(value))) : -96;
 }
 
@@ -244,8 +583,21 @@ function levelToUnit(db) {
   return Math.max(0, Math.min(1, (finiteDb(db) + 60) / 63));
 }
 
+function peakLedCells(db) {
+  return Math.ceil(levelToUnit(db) * PEAK_LED_COUNT);
+}
+
+function peakLedColour(cell) {
+  return cell <= 35 ? '#20ed86' : cell <= 43 ? '#ffb928' : '#ff3a23';
+}
+
 function vuToUnit(db) {
-  return Math.max(0, Math.min(1, (finiteDb(db) + 24) / 27));
+  return Math.max(0, Math.min(1, (finiteDb(db) + 48) / 48));
+}
+
+function vuAngle(db) {
+  // Canvas Y points down: keep the whole sweep in the upper half of the dial.
+  return Math.PI * (1.25 + vuToUnit(db) * .5);
 }
 
 function approach(current, target, elapsedMs, attackMs, releaseMs) {
@@ -253,42 +605,60 @@ function approach(current, target, elapsedMs, attackMs, releaseMs) {
   return current + (target - current) * (1 - Math.exp(-elapsedMs / timeConstant));
 }
 
+function spectrumUnit(db) {
+  return Math.max(0, Math.min(1, (finiteDb(db) + visuals.spectrumGain + 66) / 66));
+}
+
+function createSpectrumFace(canvas) {
+  const face = document.createElement('canvas');
+  face.width = canvas.width;
+  face.height = canvas.height;
+  const context = face.getContext('2d');
+  const left = 42, top = 16, bottom = face.height - 30;
+  const step = (face.width - left - 14) / frequencies.length;
+  const rows = 30, rowStep = (bottom - top) / rows;
+  const cellWidth = Math.max(2, step - 5), cellHeight = Math.max(2, rowStep - 3);
+  context.fillStyle = '#050a09';
+  context.fillRect(0, 0, face.width, face.height);
+  context.font = '10px system-ui';
+  context.textAlign = 'right';
+  for (let db = -60; db <= 0; db += 12) {
+    const y = bottom - ((db + 66) / 66) * (bottom - top);
+    context.fillStyle = '#7e9a91';
+    context.fillText(String(db), left - 10, y + 4);
+  }
+  for (let band = 0; band < frequencies.length; band++) {
+    const x = left + band * step;
+    context.fillStyle = '#10231d';
+    for (let row = 0; row < rows; row++) {
+      context.fillRect(x, bottom - (row + 1) * rowStep, cellWidth, cellHeight);
+    }
+    context.fillStyle = '#82978f';
+    context.textAlign = 'center';
+    context.fillText(frequencies[band], x + cellWidth / 2, face.height - 10);
+  }
+  const cached = {face, left, bottom, step, rows, rowStep, cellWidth, cellHeight};
+  spectrumFaceCache.set(canvas, cached);
+  return cached;
+}
+
 function drawSpectrum(values) {
   const canvas = $('spectrum');
   const context = canvas.getContext('2d');
-  const width = canvas.width;
-  const height = canvas.height;
-  const gap = 8;
-  const barWidth = (width - gap * (values.length - 1)) / values.length;
-  context.clearRect(0, 0, width, height);
-  const background = context.createLinearGradient(0, 0, 0, height);
-  background.addColorStop(0, '#24211d');
-  background.addColorStop(1, '#121211');
-  context.fillStyle = background;
-  context.fillRect(0, 0, width, height);
-  context.strokeStyle = '#ffffff12';
-  context.lineWidth = 1;
-  for (let line = 0; line <= 4; line++) {
-    const y = 8 + line * ((height - 42) / 4);
-    context.beginPath();
-    context.moveTo(0, y);
-    context.lineTo(width, y);
-    context.stroke();
-  }
-  const gradient = context.createLinearGradient(0, height, 0, 0);
-  gradient.addColorStop(0, '#35a77a');
-  gradient.addColorStop(.48, '#f2bd45');
-  gradient.addColorStop(.82, '#ef7d2a');
-  gradient.addColorStop(1, '#e3513c');
+  const grid = spectrumFaceCache.get(canvas) || createSpectrumFace(canvas);
+  context.drawImage(grid.face, 0, 0);
   values.forEach((db, index) => {
-    const barHeight = levelToUnit(db) * (height - 42);
-    const x = index * (barWidth + gap);
-    context.fillStyle = gradient;
-    context.fillRect(x, height - 28 - barHeight, barWidth, barHeight);
-    context.fillStyle = '#b9b0a2';
-    context.textAlign = 'center';
-    context.font = '16px system-ui';
-    context.fillText(frequencies[index], x + barWidth / 2, height - 7);
+    const lit = Math.round(spectrumUnit(db) * grid.rows);
+    const x = grid.left + index * grid.step;
+    for (let row = 0; row < lit; row++) {
+      context.fillStyle = row >= grid.rows - 3 ? '#f6bd66' : '#6fffc5';
+      context.fillRect(x, grid.bottom - (row + 1) * grid.rowStep, grid.cellWidth, grid.cellHeight);
+    }
+    const peak = Math.round(spectrumUnit(visuals.spectrumHold[index]) * grid.rows);
+    if (peak > 0) {
+      context.fillStyle = '#ff8954';
+      context.fillRect(x, grid.bottom - peak * grid.rowStep, grid.cellWidth, 2);
+    }
   });
 }
 
@@ -300,8 +670,8 @@ function createVuFace(canvas) {
   const width = faceCanvas.width;
   const height = faceCanvas.height;
   const cx = width / 2;
-  const cy = height * .9;
-  const radius = Math.min(width * .43, height * .78);
+  const cy = height * .98;
+  const radius = Math.min(width * .43, height * .84);
   const face = context.createLinearGradient(0, 0, 0, height);
   face.addColorStop(0, '#f8c965');
   face.addColorStop(1, '#b86a19');
@@ -310,20 +680,31 @@ function createVuFace(canvas) {
   context.lineWidth = 12;
   context.fillRect(8, 8, width - 16, height - 16);
   context.strokeRect(8, 8, width - 16, height - 16);
-  for (let index = 0; index <= 10; index++) {
-    const angle = Math.PI * (.75 + index * .15);
-    const inner = radius - (index % 5 === 0 ? 22 : 14);
+  for (let db = -48; db <= 0; db += 3) {
+    const angle = vuAngle(db);
+    const labelled = [-48, -36, -24, -12, -6, 0].includes(db);
+    const inner = radius - (labelled ? 16 : 9);
     context.beginPath();
     context.moveTo(cx + Math.cos(angle) * inner, cy + Math.sin(angle) * inner);
     context.lineTo(cx + Math.cos(angle) * radius, cy + Math.sin(angle) * radius);
-    context.strokeStyle = index > 7 ? '#a82418' : '#292016';
+    context.strokeStyle = db >= -6 ? '#a82418' : '#292016';
     context.lineWidth = 2;
     context.stroke();
+    if (labelled) {
+      context.fillStyle = db >= -6 ? '#a82418' : '#292016';
+      context.font = '12px system-ui';
+      context.textAlign = 'center';
+      context.fillText(String(db), cx + Math.cos(angle) * (radius - 31),
+        cy + Math.sin(angle) * (radius - 31) + 4);
+    }
   }
   context.fillStyle = '#292016';
   context.font = 'bold 16px system-ui';
   context.textAlign = 'right';
   context.fillText('VU', width - 22, height - 22);
+  context.font = '12px system-ui';
+  context.textAlign = 'center';
+  context.fillText('RMS / dBFS', cx, height * .67);
   vuFaceCache.set(canvas, faceCanvas);
   return faceCanvas;
 }
@@ -333,12 +714,16 @@ function drawVu(canvas, db) {
   const width = canvas.width;
   const height = canvas.height;
   const cx = width / 2;
-  const cy = height * .9;
-  const radius = Math.min(width * .43, height * .78);
+  const cy = height * .98;
+  const radius = Math.min(width * .43, height * .84);
   const face = vuFaceCache.get(canvas) || createVuFace(canvas);
   context.clearRect(0, 0, width, height);
   context.drawImage(face, 0, 0);
-  const needleAngle = Math.PI * (.75 + vuToUnit(db) * 1.5);
+  const needleAngle = vuAngle(db);
+  context.save();
+  context.beginPath();
+  context.rect(14, 14, width - 28, height - 28);
+  context.clip();
   context.beginPath();
   context.moveTo(cx, cy);
   context.lineTo(cx + Math.cos(needleAngle) * (radius - 8), cy + Math.sin(needleAngle) * (radius - 8));
@@ -349,10 +734,11 @@ function drawVu(canvas, db) {
   context.arc(cx, cy, 9, 0, Math.PI * 2);
   context.fillStyle = '#17100b';
   context.fill();
-  context.fillStyle = '#292016';
-  context.font = '17px system-ui';
-  context.textAlign = 'center';
-  context.fillText(`${finiteDb(db).toFixed(1)} dBFS`, cx, height - 18);
+  context.restore();
+  // The bezel is the last layer, so neither needle nor hub can cross it.
+  context.strokeStyle = '#080808';
+  context.lineWidth = 12;
+  context.strokeRect(8, 8, width - 16, height - 16);
 }
 
 function setVisualMode(mode) {
@@ -369,35 +755,85 @@ function setVisualMode(mode) {
 
 function animateVisual(now) {
   const elapsed = Math.min(100, Math.max(1, now - (lastFrameAt || now - FRAME_MS)));
-  if (!document.hidden && now - lastFrameAt >= FRAME_MS) {
+  if (!document.hidden && now - lastFrameAt >= FRAME_MS - 1) {
     lastFrameAt = now;
+    const stale = now - lastMeterAt > STALE_MS || now - lastMeterAdvanceAt > STALE_MS;
     if (visuals.mode === 'spectrum') {
       visuals.spectrumDisplay = visuals.spectrumDisplay.map((current, index) =>
-        approach(current, visuals.spectrumTarget[index], elapsed, 55, 190));
+        approach(current, stale ? -96 : visuals.spectrumTarget[index], elapsed, 25, 130));
+      visuals.spectrumHold = visuals.spectrumHold.map((peak, index) => {
+        const target = stale ? -96 : visuals.spectrumTarget[index];
+        if (target > peak) {
+          visuals.spectrumHoldUntil[index] = now + 180;
+          return target;
+        }
+        return now > visuals.spectrumHoldUntil[index] ? Math.max(target, peak - elapsed * .032) : peak;
+      });
       drawSpectrum(visuals.spectrumDisplay);
     } else {
       visuals.vuDisplay = visuals.vuDisplay.map((current, index) =>
-        approach(current, visuals.vuTarget[index], elapsed, 55, 260));
+        approach(current, stale ? -96 : visuals.vuTarget[index], elapsed, 35, 150));
       drawVu($('vuLeft'), visuals.vuDisplay[0]);
       drawVu($('vuRight'), visuals.vuDisplay[1]);
+    }
+    for (let channel = 0; channel < 2; channel++) {
+      const target = stale ? -96 : visuals.peakTarget[channel];
+      // Instant attack on a measured peak; a controlled dB-per-second fall.
+      visuals.peakDisplay[channel] = Math.max(target, visuals.peakDisplay[channel] - elapsed * .036);
+      if (target > visuals.peakHold[channel]) {
+        visuals.peakHold[channel] = target;
+        visuals.peakHoldUntil[channel] = now + 650;
+      } else if (now > visuals.peakHoldUntil[channel]) {
+        visuals.peakHold[channel] = Math.max(target, visuals.peakHold[channel] - elapsed * .024);
+      }
+      const side = channel === 0 ? 'Left' : 'Right';
+      const litCells = peakLedCells(visuals.peakDisplay[channel]);
+      const heldCell = peakLedCells(visuals.peakHold[channel]);
+      const ledClip = `inset(0 ${(1 - litCells / PEAK_LED_COUNT) * 100}% 0 0)`;
+      $("peak" + side).style.clipPath = ledClip;
+      $("glow" + side).style.clipPath = ledClip;
+      $("hold" + side).style.left = `${Math.max(0, heldCell - 1) / PEAK_LED_COUNT * 100}%`;
+      $("hold" + side).style.opacity = heldCell > 0 ? '1' : '0';
+      $("hold" + side).style.color = peakLedColour(heldCell);
+    }
+    if (now - lastReadoutAt >= 100) {
+      lastReadoutAt = now;
+      $('meterHealth').hidden = !stale;
+      $('meterHealth').textContent = stale ? 'Waiting for fresh meter data' : '';
+      ['Left', 'Right'].forEach((side, channel) => {
+        $('vu' + side + 'Value').textContent = `${finiteDb(stale ? -96 : visuals.vuTarget[channel]).toFixed(1)} dBFS`;
+        $('peak' + side + 'Value').textContent = `${finiteDb(stale ? -96 : visuals.peakTarget[channel]).toFixed(1)} dBFS`;
+      });
     }
   }
   requestAnimationFrame(animateVisual);
 }
 
 function updateVisualTargets(state) {
-  if (Array.isArray(state.spectrum)) {
-    visuals.spectrumTarget = frequencies.map((_, index) => finiteDb(state.spectrum[index]));
+  const now = performance.now();
+  lastMeterAt = now;
+  if (state.meter_updates == null || state.meter_updates !== lastMeterUpdate) {
+    lastMeterAdvanceAt = now;
+    lastMeterUpdate = state.meter_updates;
   }
-  visuals.vuTarget[0] = finiteDb(state.rms_l);
-  visuals.vuTarget[1] = finiteDb(state.rms_r);
+  const staleCapture = !state.clock_locked || state.capture_age_ms > STALE_MS;
+  if (Array.isArray(state.spectrum)) {
+    visuals.spectrumTarget = frequencies.map((_, index) => staleCapture ? -96 : finiteDb(state.spectrum[index]));
+  }
+  visuals.vuTarget[0] = staleCapture ? -96 : finiteDb(state.rms_l);
+  visuals.vuTarget[1] = staleCapture ? -96 : finiteDb(state.rms_r);
+  visuals.peakTarget[0] = staleCapture ? -96 : finiteDb(state.peak_l);
+  visuals.peakTarget[1] = staleCapture ? -96 : finiteDb(state.peak_r);
 }
 
 function updateDashboard(state) {
+  updateEq(state);
   $('clockState').textContent = state.clock_locked ? 'I2S locked' : 'Waiting for I2S';
   $('clockState').classList.toggle('live', state.clock_locked);
   $('signal').textContent = state.signal_present ? 'Audio present' : 'Silent';
   $('clients').textContent = state.stream_clients;
+  $('sonosClients').textContent = state.sonos_stream_clients ?? '--';
+  $('otherClients').textContent = state.other_stream_clients ?? '--';
   $('overruns').textContent = state.overruns;
   $('ip').textContent = state.ip;
   $('heap').textContent = `${Math.round(state.heap_free / 1024)} KB`;
@@ -406,17 +842,31 @@ function updateDashboard(state) {
   $('captureStack').textContent = `${state.capture_stack_free} bytes`;
   $('analysisStack').textContent = `${state.analysis_stack_free} bytes`;
   $('analysisRuns').textContent = state.analysis_runs;
+  $('meterUpdates').textContent = `${state.meter_updates ?? '--'} / ${state.spectrum_updates ?? '--'}`;
+  $('analysisTime').textContent = state.analysis_dsp_us == null ? '--'
+    : `${(state.analysis_dsp_us / 1000).toFixed(2)} / ${(state.analysis_dsp_max_us / 1000).toFixed(2)} ms`;
   $('sourceRate').textContent = `${Number(state.source_rate_hz).toLocaleString()} Hz`;
   $('captured').textContent = `${Math.round(state.captured_frames / state.sample_rate)} s`;
   $('timeouts').textContent = state.read_timeouts;
+  $('dmaLoss').textContent = state.dma_queue_overflows ?? '--';
+  $('publishLoss').textContent = state.capture_publish_drops ?? '--';
+  $('clockLoss').textContent = state.clock_loss_events ?? '--';
+  $('captureAge').textContent = state.capture_age_ms == null ? '--'
+    : state.capture_age_ms === 4294967295 ? 'Waiting for capture'
+    : `${state.capture_age_ms} ms ago`;
   $('version').textContent = state.version;
   $('networkState').textContent = state.wifi_connected
     ? `Connected at ${state.ip} - ${state.wifi_rssi} dBm - power save off`
-    : 'Setup access point active';
+    : state.setup_ap ? 'Setup access point active' : 'Connecting to Wi-Fi...';
+  $('wifiBssid').textContent = state.wifi_bssid || '--';
+  $('wifiChannel').textContent = state.wifi_channel || '--';
+  $('wifiReconnects').textContent = state.wifi_reconnects ?? '--';
   $('streamLink').href = state.stream_url;
-  $('sonosAuto').textContent = state.sonos_group_name
+  const sonosState = state.sonos_group_name
     ? `Automatic - ${state.sonos_group_name} - ${state.sonos_auto_state}`
     : `Automatic - ${state.sonos_auto_state}`;
+  $('sonosAuto').textContent = state.sonos_recovery_attempts == null ? sonosState
+    : `${sonosState} · Stream restart attempts: ${state.sonos_recovery_attempts}`;
   if (state.sonos_group_ip) {
     const select = $('sonosPlayer');
     let option = [...select.options].find(item => item.value === state.sonos_group_ip);
@@ -434,13 +884,47 @@ function updateDashboard(state) {
   if (audio.getAttribute('src') !== state.stream_url) audio.src = state.stream_url;
   $('format').textContent = `${state.sample_rate / 1000} kHz - ${state.bits}-bit - ${state.channels === 2 ? 'stereo' : 'mono'} FLAC`;
   const now = performance.now();
-  if (previousStatus && state.stream_frames >= previousStatus.streamFrames) {
+  if (previousStatus && state.uptime_s >= previousStatus.uptime &&
+      state.stream_frames >= previousStatus.streamFrames &&
+      state.captured_frames >= previousStatus.capturedFrames) {
     const elapsed = (now - previousStatus.at) / 1000;
     const delivered = ((state.stream_frames - previousStatus.streamFrames) * 1024) / elapsed;
     $('delivery').textContent = `${Math.round(delivered).toLocaleString()} /s`;
+    const captured = (state.captured_frames - previousStatus.capturedFrames) / elapsed;
+    $('captureRate').textContent = `${Math.round(captured).toLocaleString()} frames/s`;
+  } else {
+    $('delivery').textContent = '--';
+    $('captureRate').textContent = '--';
   }
-  previousStatus = {at: now, streamFrames: state.stream_frames};
+  previousStatus = {at: now, uptime: state.uptime_s,
+    streamFrames: state.stream_frames, capturedFrames: state.captured_frames};
   updateVisualTargets(state);
+}
+
+function renderEqBand({slider, output, leds}, gain) {
+  slider.value = gain;
+  const value = Number(slider.value);
+  output.textContent = `${value > 0 ? '+' : ''}${value} dB`;
+  leds.forEach((led, index) => {
+    const level = 6 - index;
+    led.classList.toggle('lit', level >= Math.min(0, value) && level <= Math.max(0, value));
+    led.classList.toggle('position', level === value);
+  });
+}
+
+function updateEq(state) {
+  if (!Array.isArray(state.eq_gains) || state.eq_gains.length !== eqSliders.length) return;
+  $('eqControls').disabled = eqSaving;
+  if (!eqDirty && !eqSaving) {
+    $('eqPreset').value = state.eq_preset;
+    eqSliders.forEach((band, i) => {
+      if (Number(band.slider.value) !== state.eq_gains[i]) renderEqBand(band, state.eq_gains[i]);
+    });
+  }
+  const mode = !state.eq_applied ? 'Waiting for audio to apply EQ'
+    : state.eq_preset === 'flat' ? 'Flat bypass active'
+    : `${state.eq_preset.replaceAll('-', ' ')} active · ${state.eq_headroom_db.toFixed(1)} dB headroom`;
+  $('eqSummary').textContent = `${mode} · Clipped samples since boot: ${state.eq_clipped_samples}`;
 }
 
 function scheduleStatus(delay = document.hidden ? HIDDEN_POLL_MS : POLL_MS) {
@@ -454,16 +938,32 @@ async function updateStatus() {
     return;
   }
   pollInFlight = true;
+  const started = performance.now();
+  const fullStatus = document.hidden || started >= nextStatusAt;
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 1500);
+  let failed = false;
   try {
-    const response = await fetch('/api/status', {cache: 'no-store'});
+    const response = await fetch(fullStatus ? '/api/status' : '/api/meters',
+      {cache: 'no-store', signal: controller.signal});
     if (!response.ok) throw new Error(`Status ${response.status}`);
-    updateDashboard(await response.json());
+    const state = await response.json();
+    if (fullStatus) {
+      updateDashboard(state);
+      nextStatusAt = performance.now() + STATUS_MS;
+    } else {
+      updateVisualTargets(state);
+    }
   } catch (error) {
+    failed = true;
     $('clockState').textContent = 'Dashboard disconnected';
     $('clockState').classList.remove('live');
   } finally {
+    clearTimeout(timeout);
     pollInFlight = false;
-    scheduleStatus();
+    const cadence = document.hidden ? HIDDEN_POLL_MS : failed ? 1000 : POLL_MS;
+    // One request in flight; use a start-to-start cadence, never catch-up bursts.
+    scheduleStatus(failed ? cadence : Math.max(20, cadence - (performance.now() - started)));
   }
 }
 
@@ -473,6 +973,64 @@ $('wifiForm').addEventListener('submit', async event => {
   const body = new URLSearchParams(new FormData(event.currentTarget));
   const response = await fetch('/api/wifi', {method: 'POST', body});
   if (!response.ok) $('networkState').textContent = 'Unable to save Wi-Fi settings';
+});
+
+['31.5 Hz', '63 Hz', '125 Hz', '250 Hz', '500 Hz', '1 kHz', '2 kHz', '4 kHz', '8 kHz', '16 kHz']
+  .forEach((frequency, index) => {
+    const label = document.createElement('label');
+    label.className = 'eq-band';
+    label.textContent = frequency;
+    const slider = document.createElement('input');
+    slider.type = 'range';
+    slider.name = `gain${index}`;
+    slider.min = -6;
+    slider.max = 6;
+    slider.value = 0;
+    slider.setAttribute('aria-label', `${frequency} gain in dB`);
+    const track = document.createElement('span');
+    track.className = 'eq-track';
+    const ladder = document.createElement('span');
+    ladder.className = 'eq-ladder';
+    ladder.setAttribute('aria-hidden', 'true');
+    const leds = Array.from({length: 13}, () => document.createElement('i'));
+    leds[6].classList.add('zero');
+    ladder.append(...leds);
+    track.append(ladder, slider);
+    const output = document.createElement('output');
+    label.append(track, output);
+    $('eqBands').appendChild(label);
+    const band = {slider, output, leds};
+    eqSliders.push(band);
+    renderEqBand(band, 0);
+    slider.addEventListener('input', () => {
+      $('eqPreset').value = 'custom';
+      renderEqBand(band, slider.value);
+      eqDirty = true;
+    });
+  });
+$('eqPreset').addEventListener('change', () => { eqDirty = true; });
+$('eqForm').addEventListener('submit', async event => {
+  event.preventDefault();
+  if (eqSaving) return;
+  const body = new URLSearchParams(new FormData(event.currentTarget));
+  eqSaving = true;
+  $('eqControls').disabled = true;
+  const message = $('eqMessage');
+  message.hidden = false;
+  message.textContent = 'Applying EQ…';
+  try {
+    const response = await fetch('/api/eq', {method: 'POST', body,
+      signal: AbortSignal.timeout(4000)});
+    if (!response.ok) throw new Error(`EQ request failed: ${response.status}`);
+    eqDirty = false;
+    nextStatusAt = 0;
+    message.hidden = true;
+  } catch (error) {
+    message.textContent = 'Could not apply EQ. Try again.';
+  } finally {
+    eqSaving = false;
+    $('eqControls').disabled = false;
+  }
 });
 
 $('scanWifi').addEventListener('click', async () => {
@@ -556,7 +1114,14 @@ document.querySelectorAll('[data-visual]').forEach(button => {
   button.addEventListener('click', () => setVisualMode(button.dataset.visual));
 });
 $('playSonos').addEventListener('click', () => sonosAction('play'));
+$('spectrumGain').addEventListener('input', event => {
+  visuals.spectrumGain = Math.max(-12, Math.min(24, Number(event.target.value) || 0));
+  $('spectrumGainValue').textContent = `${visuals.spectrumGain > 0 ? '+' : ''}${visuals.spectrumGain} dB · visuals only`;
+});
 $('stopSonos').addEventListener('click', () => sonosAction('stop'));
+$('fullscreenAudio').addEventListener('click', toggleAudioFullscreen);
+document.addEventListener('fullscreenchange', syncAudioFullscreen);
+document.addEventListener('keydown', audioFullscreenKeydown);
 document.addEventListener('visibilitychange', () => scheduleStatus(0));
 
 setVisualMode(visuals.mode);

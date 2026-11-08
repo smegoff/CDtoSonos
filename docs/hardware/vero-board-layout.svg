@@ -1,22 +1,26 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1450" height="980" viewBox="0 0 1450 980" role="img" aria-labelledby="title desc">
+<svg xmlns="http://www.w3.org/2000/svg" width="1580" height="980" viewBox="0 0 1580 980" role="img" aria-labelledby="title desc">
   <title id="title">Suggested 18 by 14 hole CDtoSonos vero-board layout</title>
   <desc id="desc">Component-side stripboard layout showing a DIP20 74LVC245 socket, three series resistors, track cuts, power, ground, NAD input pads and Heltec output pads.</desc>
   <defs>
+    <marker id="groundArrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L7,3 z" fill="#a51f1f"/>
+    </marker>
     <pattern id="grid" width="60" height="60" patternUnits="userSpaceOnUse">
       <circle cx="30" cy="30" r="8" fill="#6b4c28" stroke="#2c241d" stroke-width="2"/>
     </pattern>
     <style>
       .bg{fill:#efe8db}.board{fill:#d4b078;stroke:#3d3023;stroke-width:4}.track{stroke:#a86f2d;stroke-width:13;opacity:.55}
       .txt{font:20px Arial,sans-serif;fill:#2c241d}.tiny{font:16px Arial,sans-serif;fill:#504538}.label{font:bold 22px Arial,sans-serif;fill:#2c241d}.title{font:bold 34px Arial,sans-serif;fill:#2c241d}
+      .pintext{font:bold 14px Arial,sans-serif;fill:#f4eee5}.critical{font:bold 18px Arial,sans-serif;fill:#a51f1f}
       .chip{fill:#242424;stroke:#090909;stroke-width:3}.socket{fill:none;stroke:#e5ddd0;stroke-width:4}.pin{fill:#d7d1c5;stroke:#111;stroke-width:2}
       .cut{fill:#f5eee2;stroke:#b52323;stroke-width:5}.jumper{fill:none;stroke-width:7;stroke-linecap:round;stroke-linejoin:round}
       .red{stroke:#c5372e}.black{stroke:#202020}.blue{stroke:#1477c9}.white{stroke:#fffdf7}.yellow{stroke:#e6b800}.green{stroke:#18834b}.grey{stroke:#67605a}
       .res{fill:#e5c88f;stroke:#3b3025;stroke-width:3}.pad{stroke:#f7f1e8;stroke-width:3}.note{fill:#fff7e8;stroke:#7d603c;stroke-width:2}
     </style>
   </defs>
-  <rect class="bg" width="1450" height="980"/>
-  <text class="title" x="725" y="48" text-anchor="middle">Suggested vero-board daughterboard · component side</text>
-  <text class="txt" x="725" y="80" text-anchor="middle">18 columns × 14 rows · copper strips run horizontally · red rings are copper-side cuts</text>
+  <rect class="bg" width="1580" height="980"/>
+  <text class="title" x="790" y="48" text-anchor="middle">Suggested vero-board daughterboard · component side</text>
+  <text class="txt" x="790" y="80" text-anchor="middle">18 columns × 14 rows · copper strips run horizontally · red rings are copper-side cuts</text>
 
   <!-- board and horizontal copper strips -->
   <rect class="board" x="155" y="105" width="1080" height="840" rx="12"/>
@@ -47,7 +51,7 @@
   <rect class="socket" x="730" y="250" width="170" height="560" rx="7"/>
   <path d="M770 236a45 30 0 0 0 90 0" fill="#d4b078"/>
   <circle cx="750" cy="270" r="9" fill="#f1d248"/>
-  <text x="815" y="535" text-anchor="middle" transform="rotate(-90 815 535)" style="font:bold 26px Arial,sans-serif;fill:#f4eee5">74LVC245 · DIP-20</text>
+  <text class="label" x="815" y="850" text-anchor="middle">74LVC245AN · DIP-20 · notch and pin 1 at top</text>
 
   <!-- pins at columns 10 and 13 -->
   <g>
@@ -62,6 +66,22 @@
     <circle class="pin" cx="725" cy="735" r="12"/><circle class="pin" cx="905" cy="735" r="12"/>
     <circle class="pin" cx="725" cy="795" r="12"/><circle class="pin" cx="905" cy="795" r="12"/>
   </g>
+
+  <!-- Unambiguous top-view IC pin labels. Left side counts 1 to 10 downward;
+       right side counts 20 to 11 downward. -->
+  <g class="pintext">
+    <text x="744" y="260">1 DIR</text><text x="886" y="260" text-anchor="end">20 VCC</text>
+    <text x="744" y="320">2 A1</text><text x="886" y="320" text-anchor="end">19 /OE</text>
+    <text x="744" y="380">3 A2</text><text x="886" y="380" text-anchor="end">18 B1</text>
+    <text x="744" y="440">4 A3</text><text x="886" y="440" text-anchor="end">17 B2</text>
+    <text x="744" y="500">5 A4</text><text x="886" y="500" text-anchor="end">16 B3</text>
+    <text x="744" y="560">6 A5</text><text x="886" y="560" text-anchor="end">15 B4</text>
+    <text x="744" y="620">7 A6</text><text x="886" y="620" text-anchor="end">14 B5</text>
+    <text x="744" y="680">8 A7</text><text x="886" y="680" text-anchor="end">13 B6</text>
+    <text x="744" y="740">9 A8</text><text x="886" y="740" text-anchor="end">12 B7</text>
+    <text x="744" y="800">10 GND</text><text x="886" y="800" text-anchor="end">11 B8</text>
+  </g>
+  <rect x="734" y="414" width="91" height="40" rx="6" fill="none" stroke="#e6b800" stroke-width="4"/>
 
   <!-- IC isolation cuts at column 11 -->
   <g>
@@ -108,24 +128,32 @@
   <path class="jumper black" d="M905 315H965V915"/>
   <path class="jumper black" d="M725 495V795"/>
   <path class="jumper black" d="M725 795V915H1145"/>
-  <text class="tiny" x="650" y="600" text-anchor="end">Bare link grounds</text><text class="tiny" x="650" y="621" text-anchor="end">A4–A8 and pin 10</text>
+  <text class="label" x="685" y="580" text-anchor="end">GROUND LINK</text>
+  <text class="tiny" x="685" y="604" text-anchor="end">starts at pin 5</text>
+  <text class="critical" x="685" y="630" text-anchor="end">NOT pin 4</text>
+  <path d="M690 588H710V495" fill="none" stroke="#a51f1f" stroke-width="4" marker-end="url(#groundArrow)"/>
   <text class="tiny" x="990" y="327">/OE low</text>
 
   <!-- 100nF across pin20/pin19 -->
   <path class="jumper red" d="M935 255H955M955 244V266M970 244V266M970 315H935"/>
   <text class="tiny" x="990" y="270">100 nF</text><text class="tiny" x="990" y="290">pins 20 ↔ 19</text>
 
-  <rect class="note" x="1248" y="115" width="180" height="290" rx="12"/>
-  <text class="label" x="1338" y="150" text-anchor="middle">Copper cuts</text>
+  <rect class="note" x="1248" y="115" width="305" height="290" rx="12"/>
+  <text class="label" x="1400" y="150" text-anchor="middle">Copper cuts</text>
   <circle class="cut" cx="1285" cy="190" r="16"/><text class="txt" x="1315" y="197">10 under IC</text>
   <circle class="cut" cx="1285" cy="235" r="16"/><text class="txt" x="1315" y="242">3 inputs</text>
   <text class="tiny" x="1268" y="285">Drill/cut copper</text><text class="tiny" x="1268" y="307">on the underside.</text>
   <text class="tiny" x="1268" y="345">Check every cut</text><text class="tiny" x="1268" y="367">with continuity mode.</text>
 
-  <rect class="note" x="1248" y="440" width="180" height="260" rx="12"/>
-  <text class="label" x="1338" y="475" text-anchor="middle">Orientation</text>
-  <text class="tiny" x="1268" y="515">IC dot/notch at top.</text>
-  <text class="tiny" x="1268" y="550">Copper is behind</text><text class="tiny" x="1268" y="572">this drawing.</text>
-  <text class="tiny" x="1268" y="615">Use a socket and</text><text class="tiny" x="1268" y="637">insulated standoffs.</text>
-  <text class="tiny" x="1268" y="675">Do not connect D+5V.</text>
+  <rect class="note" x="1248" y="440" width="305" height="405" rx="12"/>
+  <text class="label" x="1400" y="475" text-anchor="middle">Critical pin check</text>
+  <text class="critical" x="1268" y="520">Pin 4 = A3 / DATA</text>
+  <text class="txt" x="1268" y="555">Pins 5–9 = grounded inputs</text>
+  <text class="txt" x="1268" y="590">Pin 10 = IC ground</text>
+  <text class="txt" x="1268" y="625">Pin 19 = /OE grounded</text>
+  <text class="tiny" x="1268" y="675">Do not power the board if pin 4</text>
+  <text class="tiny" x="1268" y="700">is hard-wired to the ground link.</text>
+  <text class="tiny" x="1268" y="750">IC dot/notch is at the top.</text>
+  <text class="tiny" x="1268" y="775">Copper is behind this drawing.</text>
+  <text class="tiny" x="1268" y="800">Use a socket. Do not connect D+5V.</text>
 </svg>

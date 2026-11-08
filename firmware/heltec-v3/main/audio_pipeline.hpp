@@ -6,6 +6,7 @@
 #include <cstdint>
 
 #include "board.hpp"
+#include "graphic_eq.hpp"
 #include "spectrum_analyzer.hpp"
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
@@ -44,6 +45,14 @@ struct AudioMetrics {
     uint32_t source_rate_hz = 0;
 };
 
+struct EqStatus {
+    EqPreset preset;
+    EqGains gains;
+    float headroom_db;
+    bool applied;
+    uint32_t clipped_samples;
+};
+
 class AudioPipeline {
 public:
     static constexpr size_t kSamplesPerBlock =
@@ -64,6 +73,8 @@ public:
     AudioMetrics metrics() const;
     // Snapshot for frequent visual polling; no task stack watermark scans.
     AudioMetrics meters() const;
+    void set_eq(EqPreset preset, const EqGains& gains);
+    EqStatus eq_status() const;
 
 private:
     struct PcmBlock {
@@ -76,6 +87,7 @@ private:
     void capture_task();
     void analysis_task();
     void publish(const int16_t* samples);
+    void process_eq(int16_t* samples);
     void analyze(const int16_t* samples, bool emphasis, bool update_spectrum);
     static float to_dbfs(float value);
 
@@ -85,6 +97,11 @@ private:
     // each 24-bit wire slot, so this buffer is already native PCM.
     std::array<int16_t, kSamplesPerBlock> raw_buffer_ = {};
     std::array<int16_t, kSamplesPerBlock> analysis_buffer_ = {};
+    GraphicEq eq_;  // Filter history belongs to the capture task.
+    EqConfig requested_eq_;  // Protected by mutex_.
+    std::atomic<uint32_t> eq_revision_ = 0;
+    std::atomic<uint32_t> eq_applied_revision_ = 0;
+    std::atomic<uint32_t> eq_clipped_samples_ = 0;
     // Current plus four preceding blocks: about 116 ms of peak history.
     // Accessed only by the analysis task; RMS remains a single-block value.
     std::array<std::array<uint16_t, 2>, 5> peak_history_ = {};

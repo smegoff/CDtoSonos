@@ -1,6 +1,7 @@
 #pragma once
 
 #include <array>
+#include <atomic>
 #include <string>
 
 #include "esp_netif.h"
@@ -13,6 +14,13 @@ struct WifiNetwork {
     bool secure = false;
 };
 
+struct WifiLink {
+    std::array<char, 18> bssid = {};
+    int rssi = -127;
+    unsigned channel = 0;
+    unsigned reconnects = 0;
+};
+
 class WifiManager {
 public:
     static constexpr size_t kMaxScanResults = 20;
@@ -23,6 +31,7 @@ public:
     bool connected() const;
     bool setup_ap_active() const;
     int rssi() const;
+    WifiLink link() const;
     std::string ip_address() const;
     std::string hostname() const;
 
@@ -37,8 +46,10 @@ private:
 
     esp_netif_t* station_ = nullptr;
     esp_netif_t* access_point_ = nullptr;
-    bool connected_ = false;
-    bool setup_ap_active_ = false;
+    std::atomic<bool> connected_ = false;
+    std::atomic<bool> setup_ap_active_ = false;
+    std::atomic<unsigned> reconnects_ = 0;
+    bool has_connected_ = false;
     unsigned reconnect_attempts_ = 0;
     std::string hostname_ = "cdtosonos";
 };

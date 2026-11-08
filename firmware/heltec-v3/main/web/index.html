@@ -61,12 +61,41 @@
     </section>
 
     <section id="dashboardControls" class="grid">
+      <article id="graphicEq" class="panel eq-panel">
+        <p class="eyebrow">CD stream</p>
+        <h2>Ten-band graphic EQ</h2>
+        <form id="eqForm">
+          <fieldset id="eqControls" disabled>
+            <div class="eq-glass">
+              <div class="rack-legend"><span>10 BAND GRAPHIC EQUALIZER</span><span>±6 dB · 0 dB centre</span></div>
+              <div id="eqBands" class="eq-bands" aria-label="EQ band gains"></div>
+            </div>
+            <div class="eq-toolbar">
+              <label for="eqPreset">Preset</label>
+              <select id="eqPreset" name="preset">
+                <option value="flat">Flat (bypass)</option>
+                <option value="warm">Warm</option>
+                <option value="bass-boost">Bass Boost</option>
+                <option value="vocal">Vocal</option>
+                <option value="bright">Bright</option>
+                <option value="custom">Custom</option>
+              </select>
+              <button type="submit">Apply EQ</button>
+            </div>
+          </fieldset>
+        </form>
+        <p id="eqSummary" class="help">Waiting for EQ status…</p>
+        <p id="eqMessage" class="help" role="status" hidden></p>
+      </article>
+
       <article class="panel">
         <p class="eyebrow">Lossless stream</p>
         <h2>Playback</h2>
         <dl>
           <div><dt>Signal</dt><dd id="signal">Silent</dd></div>
           <div><dt>Clients</dt><dd id="clients">0</dd></div>
+          <div><dt>Sonos listeners</dt><dd id="sonosClients">--</dd></div>
+          <div><dt>Other listeners</dt><dd id="otherClients">--</dd></div>
           <div><dt>Buffer overruns</dt><dd id="overruns">0</dd></div>
         </dl>
         <audio id="localAudio" controls preload="none"></audio>
@@ -100,6 +129,11 @@
           <button type="submit">Save and restart</button>
         </form>
         <p id="networkState" class="help">Checking network...</p>
+        <dl>
+          <div><dt>Access point BSSID</dt><dd id="wifiBssid">--</dd></div>
+          <div><dt>Wi-Fi channel</dt><dd id="wifiChannel">--</dd></div>
+          <div><dt>Reconnects since boot</dt><dd id="wifiReconnects">--</dd></div>
+        </dl>
       </article>
 
       <article class="panel">

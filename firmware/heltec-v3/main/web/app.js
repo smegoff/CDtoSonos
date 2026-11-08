@@ -13,6 +13,9 @@ let pollTimer = 0;
 let pollInFlight = false;
 let lastFrameAt = 0;
 let nextStatusAt = 0;
+let eqDirty = false;
+let eqSaving = false;
+const eqSliders = [];
 let lastMeterAt = -Infinity;
 let lastMeterUpdate = null;
 let lastMeterAdvanceAt = -Infinity;
@@ -382,10 +385,13 @@ function updateVisualTargets(state) {
 }
 
 function updateDashboard(state) {
+  updateEq(state);
   $('clockState').textContent = state.clock_locked ? 'I2S locked' : 'Waiting for I2S';
   $('clockState').classList.toggle('live', state.clock_locked);
   $('signal').textContent = state.signal_present ? 'Audio present' : 'Silent';
   $('clients').textContent = state.stream_clients;
+  $('sonosClients').textContent = state.sonos_stream_clients ?? '--';
+  $('otherClients').textContent = state.other_stream_clients ?? '--';
   $('overruns').textContent = state.overruns;
   $('ip').textContent = state.ip;
   $('heap').textContent = `${Math.round(state.heap_free / 1024)} KB`;
@@ -409,11 +415,16 @@ function updateDashboard(state) {
   $('version').textContent = state.version;
   $('networkState').textContent = state.wifi_connected
     ? `Connected at ${state.ip} - ${state.wifi_rssi} dBm - power save off`
-    : 'Setup access point active';
+    : state.setup_ap ? 'Setup access point active' : 'Connecting to Wi-Fi...';
+  $('wifiBssid').textContent = state.wifi_bssid || '--';
+  $('wifiChannel').textContent = state.wifi_channel || '--';
+  $('wifiReconnects').textContent = state.wifi_reconnects ?? '--';
   $('streamLink').href = state.stream_url;
-  $('sonosAuto').textContent = state.sonos_group_name
+  const sonosState = state.sonos_group_name
     ? `Automatic - ${state.sonos_group_name} - ${state.sonos_auto_state}`
     : `Automatic - ${state.sonos_auto_state}`;
+  $('sonosAuto').textContent = state.sonos_recovery_attempts == null ? sonosState
+    : `${sonosState} · Stream restart attempts: ${state.sonos_recovery_attempts}`;
   if (state.sonos_group_ip) {
     const select = $('sonosPlayer');
     let option = [...select.options].find(item => item.value === state.sonos_group_ip);
@@ -446,6 +457,32 @@ function updateDashboard(state) {
   previousStatus = {at: now, uptime: state.uptime_s,
     streamFrames: state.stream_frames, capturedFrames: state.captured_frames};
   updateVisualTargets(state);
+}
+
+function renderEqBand({slider, output, leds}, gain) {
+  slider.value = gain;
+  const value = Number(slider.value);
+  output.textContent = `${value > 0 ? '+' : ''}${value} dB`;
+  leds.forEach((led, index) => {
+    const level = 6 - index;
+    led.classList.toggle('lit', level >= Math.min(0, value) && level <= Math.max(0, value));
+    led.classList.toggle('position', level === value);
+  });
+}
+
+function updateEq(state) {
+  if (!Array.isArray(state.eq_gains) || state.eq_gains.length !== eqSliders.length) return;
+  $('eqControls').disabled = eqSaving;
+  if (!eqDirty && !eqSaving) {
+    $('eqPreset').value = state.eq_preset;
+    eqSliders.forEach((band, i) => {
+      if (Number(band.slider.value) !== state.eq_gains[i]) renderEqBand(band, state.eq_gains[i]);
+    });
+  }
+  const mode = !state.eq_applied ? 'Waiting for audio to apply EQ'
+    : state.eq_preset === 'flat' ? 'Flat bypass active'
+    : `${state.eq_preset.replaceAll('-', ' ')} active · ${state.eq_headroom_db.toFixed(1)} dB headroom`;
+  $('eqSummary').textContent = `${mode} · Clipped samples since boot: ${state.eq_clipped_samples}`;
 }
 
 function scheduleStatus(delay = document.hidden ? HIDDEN_POLL_MS : POLL_MS) {
@@ -494,6 +531,64 @@ $('wifiForm').addEventListener('submit', async event => {
   const body = new URLSearchParams(new FormData(event.currentTarget));
   const response = await fetch('/api/wifi', {method: 'POST', body});
   if (!response.ok) $('networkState').textContent = 'Unable to save Wi-Fi settings';
+});
+
+['31.5 Hz', '63 Hz', '125 Hz', '250 Hz', '500 Hz', '1 kHz', '2 kHz', '4 kHz', '8 kHz', '16 kHz']
+  .forEach((frequency, index) => {
+    const label = document.createElement('label');
+    label.className = 'eq-band';
+    label.textContent = frequency;
+    const slider = document.createElement('input');
+    slider.type = 'range';
+    slider.name = `gain${index}`;
+    slider.min = -6;
+    slider.max = 6;
+    slider.value = 0;
+    slider.setAttribute('aria-label', `${frequency} gain in dB`);
+    const track = document.createElement('span');
+    track.className = 'eq-track';
+    const ladder = document.createElement('span');
+    ladder.className = 'eq-ladder';
+    ladder.setAttribute('aria-hidden', 'true');
+    const leds = Array.from({length: 13}, () => document.createElement('i'));
+    leds[6].classList.add('zero');
+    ladder.append(...leds);
+    track.append(ladder, slider);
+    const output = document.createElement('output');
+    label.append(track, output);
+    $('eqBands').appendChild(label);
+    const band = {slider, output, leds};
+    eqSliders.push(band);
+    renderEqBand(band, 0);
+    slider.addEventListener('input', () => {
+      $('eqPreset').value = 'custom';
+      renderEqBand(band, slider.value);
+      eqDirty = true;
+    });
+  });
+$('eqPreset').addEventListener('change', () => { eqDirty = true; });
+$('eqForm').addEventListener('submit', async event => {
+  event.preventDefault();
+  if (eqSaving) return;
+  const body = new URLSearchParams(new FormData(event.currentTarget));
+  eqSaving = true;
+  $('eqControls').disabled = true;
+  const message = $('eqMessage');
+  message.hidden = false;
+  message.textContent = 'Applying EQ…';
+  try {
+    const response = await fetch('/api/eq', {method: 'POST', body,
+      signal: AbortSignal.timeout(4000)});
+    if (!response.ok) throw new Error(`EQ request failed: ${response.status}`);
+    eqDirty = false;
+    nextStatusAt = 0;
+    message.hidden = true;
+  } catch (error) {
+    message.textContent = 'Could not apply EQ. Try again.';
+  } finally {
+    eqSaving = false;
+    $('eqControls').disabled = false;
+  }
 });
 
 $('scanWifi').addEventListener('click', async () => {

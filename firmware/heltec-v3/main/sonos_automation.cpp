@@ -14,6 +14,8 @@ constexpr int64_t kAudioQualificationUs = 1500000;
 constexpr int64_t kSilenceTimeoutUs = 90000000;
 constexpr int64_t kDiscoveryRetryUs = 15000000;
 constexpr int64_t kPlaybackRetryUs = 5000000;
+constexpr int64_t kRecoveryCooldownUs = 30000000;
+constexpr uint32_t kFreshCaptureMs = 250;
 
 std::string read_nvs_string(nvs_handle_t handle, const char* key) {
     size_t length = 0;
@@ -167,25 +169,33 @@ bool SonosAutomation::discover_and_select() {
     return true;
 }
 
-bool SonosAutomation::play_selected() {
-    const SonosAutomationStatus current = status();
-    if (!current.group_selected || current.group_ip.empty() ||
-        !wifi_.connected()) {
+bool SonosAutomation::play_selected(bool recovering) {
+    xSemaphoreTake(mutex_, portMAX_DELAY);
+    if (play_in_progress_ || !status_.group_selected || status_.group_ip.empty() ||
+        !wifi_.connected() || (recovering && !status_.play_commanded)) {
+        xSemaphoreGive(mutex_);
         return false;
     }
-    xSemaphoreTake(mutex_, portMAX_DELAY);
+    const std::string group_ip = status_.group_ip;
+    play_in_progress_ = true;
     ++status_.play_attempts;
-    status_.state = "connecting";
+    if (recovering) ++status_.recovery_attempts;
+    status_.last_play_started_us = esp_timer_get_time();
+    status_.state = recovering ? "restarting stream" : "connecting";
     xSemaphoreGive(mutex_);
 
     const std::string stream_url =
         "http://" + wifi_.ip_address() + ":8000/cd.flac";
-    const bool ok = sonos_.play_stream(current.group_ip, stream_url);
+    const bool ok = sonos_.play_stream(group_ip, stream_url);
     xSemaphoreTake(mutex_, portMAX_DELAY);
-    status_.play_commanded = ok;
-    status_.state = ok ? "streaming" : "play retry";
+    play_in_progress_ = false;
+    if (status_.group_ip == group_ip) {
+        status_.play_commanded = ok;
+        status_.state = ok ? "streaming" : "play retry";
+    }
     xSemaphoreGive(mutex_);
-    ESP_LOGI(kTag, "Automatic Sonos play %s", ok ? "accepted" : "failed");
+    ESP_LOGI(kTag, "Sonos %s %s", recovering ? "restart" : "play",
+             ok ? "accepted" : "failed");
     return ok;
 }
 
@@ -204,7 +214,7 @@ void SonosAutomation::task() {
     int64_t audio_since = 0;
     int64_t silence_since = 0;
     int64_t last_discovery = -kDiscoveryRetryUs;
-    int64_t last_play_attempt = -kPlaybackRetryUs;
+    int64_t last_recovery = -kRecoveryCooldownUs;
 
     while (true) {
         const int64_t now = esp_timer_get_time();
@@ -224,22 +234,30 @@ void SonosAutomation::task() {
         }
 
         const AudioMetrics metrics = audio_.metrics();
-        if (metrics.clock_locked && metrics.signal_present) {
+        if (metrics.clock_locked && metrics.signal_present &&
+            metrics.capture_age_ms < kFreshCaptureMs) {
             silence_since = 0;
             if (audio_since == 0) audio_since = now;
 
-            const bool client_missing =
-                current.play_commanded && lossless_.clients() == 0;
+            const ListenerCounts listeners =
+                lossless_.listener_counts(current.group_ip.c_str());
+            const bool client_missing = current.play_commanded && listeners.sonos == 0;
+            const bool stream_unhealthy = current.play_commanded &&
+                listeners.sonos != 0 && listeners.healthy_sonos == 0;
             const bool needs_play = !current.play_commanded || client_missing;
-            if (current.play_commanded && !client_missing &&
-                current.state != "streaming") {
+            const bool starting = current.state == "connecting" ||
+                current.state == "restarting stream";
+            if (current.play_commanded && listeners.healthy_sonos != 0 &&
+                !starting && current.state != "streaming") {
                 set_state("streaming");
             }
-            if (current.group_selected && needs_play &&
+            if (current.group_selected && !starting && (needs_play || stream_unhealthy) &&
                 now - audio_since >= kAudioQualificationUs &&
-                now - last_play_attempt >= kPlaybackRetryUs) {
-                last_play_attempt = now;
-                play_selected();
+                (current.last_play_started_us == 0 ||
+                 now - current.last_play_started_us >= kPlaybackRetryUs) &&
+                now - last_recovery >= kRecoveryCooldownUs) {
+                if (stream_unhealthy) last_recovery = now;
+                play_selected(stream_unhealthy);
             }
         } else {
             audio_since = 0;

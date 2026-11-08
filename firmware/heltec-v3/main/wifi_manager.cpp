@@ -1,6 +1,7 @@
 #include "wifi_manager.hpp"
 
 #include <algorithm>
+#include <cstdio>
 #include <cstring>
 
 #include "esp_check.h"
@@ -111,6 +112,10 @@ void WifiManager::event_handler(void* context,
             manager->start_setup_ap();
         }
     } else if (base == IP_EVENT && id == IP_EVENT_STA_GOT_IP) {
+        if (!manager->connected_ && manager->has_connected_) {
+            ++manager->reconnects_;
+        }
+        manager->has_connected_ = true;
         manager->connected_ = true;
         manager->reconnect_attempts_ = 0;
         const auto* event = static_cast<ip_event_got_ip_t*>(data);
@@ -164,6 +169,9 @@ bool WifiManager::start() {
                      sizeof(station.sta.ssid) - 1);
         std::strncpy(reinterpret_cast<char*>(station.sta.password),
                      password.data(), sizeof(station.sta.password) - 1);
+        // Compare every AP for the saved SSID on connect and reconnect.
+        station.sta.scan_method = WIFI_ALL_CHANNEL_SCAN;
+        station.sta.sort_method = WIFI_CONNECT_AP_BY_SIGNAL;
         station.sta.threshold.authmode = WIFI_AUTH_WPA2_PSK;
         station.sta.pmf_cfg.capable = true;
         station.sta.pmf_cfg.required = false;
@@ -197,11 +205,20 @@ bool WifiManager::setup_ap_active() const {
 }
 
 int WifiManager::rssi() const {
-    if (!connected_) return -127;
+    return link().rssi;
+}
+
+WifiLink WifiManager::link() const {
+    WifiLink result;
+    result.reconnects = reconnects_.load();
     wifi_ap_record_t access_point = {};
-    return esp_wifi_sta_get_ap_info(&access_point) == ESP_OK
-               ? access_point.rssi
-               : -127;
+    if (connected_ && esp_wifi_sta_get_ap_info(&access_point) == ESP_OK) {
+        std::snprintf(result.bssid.data(), result.bssid.size(), MACSTR,
+                      MAC2STR(access_point.bssid));
+        result.rssi = access_point.rssi;
+        result.channel = access_point.primary;
+    }
+    return result;
 }
 
 std::string WifiManager::ip_address() const {

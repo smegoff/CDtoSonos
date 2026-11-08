@@ -24,6 +24,7 @@ private:
     static esp_err_t js_handler(httpd_req_t* request);
     static esp_err_t status_handler(httpd_req_t* request);
     static esp_err_t meters_handler(httpd_req_t* request);
+    static esp_err_t eq_handler(httpd_req_t* request);
     static esp_err_t wifi_scan_handler(httpd_req_t* request);
     static esp_err_t wifi_handler(httpd_req_t* request);
     static esp_err_t sonos_discover_handler(httpd_req_t* request);

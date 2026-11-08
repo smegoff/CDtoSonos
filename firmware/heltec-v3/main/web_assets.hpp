@@ -65,12 +65,41 @@ inline constexpr char kIndex[] = R"CDTS(<!doctype html>
     </section>
 
     <section id="dashboardControls" class="grid">
+      <article id="graphicEq" class="panel eq-panel">
+        <p class="eyebrow">CD stream</p>
+        <h2>Ten-band graphic EQ</h2>
+        <form id="eqForm">
+          <fieldset id="eqControls" disabled>
+            <div class="eq-glass">
+              <div class="rack-legend"><span>10 BAND GRAPHIC EQUALIZER</span><span>±6 dB · 0 dB centre</span></div>
+              <div id="eqBands" class="eq-bands" aria-label="EQ band gains"></div>
+            </div>
+            <div class="eq-toolbar">
+              <label for="eqPreset">Preset</label>
+              <select id="eqPreset" name="preset">
+                <option value="flat">Flat (bypass)</option>
+                <option value="warm">Warm</option>
+                <option value="bass-boost">Bass Boost</option>
+                <option value="vocal">Vocal</option>
+                <option value="bright">Bright</option>
+                <option value="custom">Custom</option>
+              </select>
+              <button type="submit">Apply EQ</button>
+            </div>
+          </fieldset>
+        </form>
+        <p id="eqSummary" class="help">Waiting for EQ status…</p>
+        <p id="eqMessage" class="help" role="status" hidden></p>
+      </article>
+
       <article class="panel">
         <p class="eyebrow">Lossless stream</p>
         <h2>Playback</h2>
         <dl>
           <div><dt>Signal</dt><dd id="signal">Silent</dd></div>
           <div><dt>Clients</dt><dd id="clients">0</dd></div>
+          <div><dt>Sonos listeners</dt><dd id="sonosClients">--</dd></div>
+          <div><dt>Other listeners</dt><dd id="otherClients">--</dd></div>
           <div><dt>Buffer overruns</dt><dd id="overruns">0</dd></div>
         </dl>
         <audio id="localAudio" controls preload="none"></audio>
@@ -104,6 +133,11 @@ inline constexpr char kIndex[] = R"CDTS(<!doctype html>
           <button type="submit">Save and restart</button>
         </form>
         <p id="networkState" class="help">Checking network...</p>
+        <dl>
+          <div><dt>Access point BSSID</dt><dd id="wifiBssid">--</dd></div>
+          <div><dt>Wi-Fi channel</dt><dd id="wifiChannel">--</dd></div>
+          <div><dt>Reconnects since boot</dt><dd id="wifiReconnects">--</dd></div>
+        </dl>
       </article>
 
       <article class="panel">
@@ -273,6 +307,27 @@ body.audio-fullscreen > header, body.audio-fullscreen #dashboardControls { visib
 #liveAudioPanel.is-fullscreen .visual-note { margin-top: 0; }
 #liveAudioPanel.is-fullscreen .peak-meters { flex: 0 0 auto; }
 .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; padding-bottom: 32px; }
+.eq-panel { grid-column: 1 / -1; }
+.eq-panel fieldset { border: 0; margin: 0; padding: 0; min-width: 0; }
+.eq-toolbar { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 12px; margin-top: 16px; }
+.eq-toolbar select { width: min(12rem, 100%); }
+.eq-toolbar label, .eq-toolbar button { margin: 0; }
+.eq-bands { display: grid; grid-template-columns: repeat(10, minmax(0, 1fr)); gap: 14px 8px; padding-top: 5px; }
+.eq-band { min-width: 0; display: grid; justify-items: center; gap: 5px; margin: 0; color: #b1c9be; font-size: .72rem; white-space: nowrap; }
+.eq-track { position: relative; display: grid; justify-items: center; width: 100%; height: 132px; }
+.eq-track:focus-within { outline: 1px solid #6fffc5; outline-offset: 2px; }
+.eq-track input { position: absolute; inset: 0; margin: 0; width: 100%; height: 100%; padding: 0; writing-mode: vertical-lr; direction: rtl; opacity: 0; cursor: ns-resize; }
+.eq-ladder { display: grid; grid-template-rows: repeat(13, 1fr); gap: 3px; width: min(70%, 56px); }
+.eq-ladder i { background: #10231d; border: 1px solid #193129; border-radius: 1px; }
+.eq-ladder i.zero { border-color: #497563; }
+.eq-ladder i.lit { background: #3aab7d; border-color: #4dd69b; }
+.eq-ladder i.position { background: #6fffc5; border-color: #b2ffdd; box-shadow: 0 0 6px #6fffc577; }
+.eq-band output { color: #8be2b8; font-variant-numeric: tabular-nums; }
+@media (forced-colors: active) {
+  .eq-track input { opacity: 1; }
+  .eq-ladder { visibility: hidden; }
+}
+@media (max-width: 640px) { .eq-bands { grid-template-columns: repeat(5, minmax(0, 1fr)); } }
 dl { margin: 0 0 18px; }
 dl div { display: flex; justify-content: space-between; gap: 16px; padding: 8px 0; border-bottom: 1px solid var(--edge); }
 dt { color: var(--muted); }
@@ -298,7 +353,7 @@ audio { width: 100%; margin: 4px 0 8px; }
 
 /* A passive hi-fi faceplate: all texture and reflections are static CSS.
    Keep the existing canvas cadence and the audio/telemetry path unchanged. */
-#liveAudioPanel {
+:is(#liveAudioPanel, #graphicEq) {
   --muted: #454137;
   --faceplate: repeating-linear-gradient(0deg, #fff1 0 1px, #382b1808 1px 2px, transparent 2px 4px), linear-gradient(105deg, #b5ad9b, #e2dac7 24%, #c7bda7 65%, #ddd5c5);
   position: relative; padding: 22px 28px 20px; border-radius: 3px;
@@ -307,19 +362,19 @@ audio { width: 100%; margin: 4px 0 8px; }
 }
 #liveAudioPanel .visual-heading { align-items: center; gap: 16px; margin-bottom: 17px; }
 #liveAudioPanel .visual-heading > div { flex: 1; }
-#liveAudioPanel .eyebrow { color: #434036; font-size: 9px; letter-spacing: .22em; }
-#liveAudioPanel h2 { padding: 5px 12px; background: #252824; color: #dbd6c7; font-size: 13px; letter-spacing: .17em; text-transform: uppercase; font-weight: 400; }
+:is(#liveAudioPanel, #graphicEq) .eyebrow { color: #434036; font-size: 9px; letter-spacing: .22em; }
+:is(#liveAudioPanel, #graphicEq) h2 { padding: 5px 12px; background: #252824; color: #dbd6c7; font-size: 13px; letter-spacing: .17em; text-transform: uppercase; font-weight: 400; }
 #liveAudioPanel #format { color: #454137; margin: 0; font-size: 11px; text-transform: uppercase; letter-spacing: .06em; }
-#liveAudioPanel .spectrum-rack, #liveAudioPanel .vu-pair {
+#liveAudioPanel .spectrum-rack, #liveAudioPanel .vu-pair, #graphicEq .eq-glass {
   position: relative; margin-top: 0; padding: 17px 20px 10px; border: 5px solid #272a25; border-radius: 1px;
   background: #070c09; box-shadow: 0 0 0 1px #a8a492, 0 2px 0 2px #eee5d0, inset 0 3px 9px #000, 0 5px 9px #0006;
 }
-#liveAudioPanel .spectrum-rack::after, #liveAudioPanel .vu-pair::after {
+#liveAudioPanel .spectrum-rack::after, #liveAudioPanel .vu-pair::after, #graphicEq .eq-glass::after {
   content: ''; position: absolute; inset: 0; pointer-events: none;
   background: linear-gradient(108deg, transparent 8%, #d4e6ce08 24%, transparent 25% 59%, #fff04a03 60%, transparent 77%), linear-gradient(#dce8d008, transparent 28%);
   box-shadow: inset 0 0 12px #0008;
 }
-#liveAudioPanel .rack-legend { color: #8c9b88; font-size: 9px; letter-spacing: .16em; }
+:is(#liveAudioPanel, #graphicEq) .rack-legend { color: #8c9b88; font-size: 9px; letter-spacing: .16em; }
 #liveAudioPanel .vu-readout { color: #aeb7a7; }
 #liveAudioPanel .spectrum-controls { margin: 15px 0 10px; font-size: 10px; text-transform: uppercase; letter-spacing: .07em; }
 #liveAudioPanel .spectrum-controls input { accent-color: #353a31; height: 16px; }
@@ -332,7 +387,7 @@ audio { width: 100%; margin: 4px 0 8px; }
 .faceplate-brand small { display: block; font-size: 7px; font-weight: 500; letter-spacing: .12em; }
 .nameplate-diy { grid-column: 1 / -1; margin-top: 5px; font-size: 7px; letter-spacing: .17em; color: #555448; }
 #liveAudioPanel .visual-toggle { padding: 0; border: 0; background: transparent; gap: 12px; }
-#liveAudioPanel .visual-tools button {
+#liveAudioPanel .visual-tools button, #graphicEq .eq-toolbar button {
   position: relative; margin: 0; padding: 8px 12px; border: 2px solid #34372f; border-radius: 1px;
   background: linear-gradient(#ece8dc 0 22%, #bab8aa 24% 77%, #85877b 79%); color: #252a21;
   box-shadow: 0 2px 0 #f6ecd2, inset 0 1px #fff8, 0 2px 4px #0005;
@@ -354,10 +409,10 @@ audio { width: 100%; margin: 4px 0 8px; }
   .rack-legend { font-size: 8px; letter-spacing: .03em; }
   .spectrum-controls { flex-wrap: wrap; gap: 8px; }
   .peak-track { --led-gap: 1px; }
-  #liveAudioPanel { padding: 16px 12px; }
+  :is(#liveAudioPanel, #graphicEq) { padding: 16px 12px; }
   #liveAudioPanel .visual-heading { align-items: stretch; gap: 9px; }
-  #liveAudioPanel .spectrum-rack, #liveAudioPanel .vu-pair { padding: 10px 4px 5px; border-width: 3px; }
-  #liveAudioPanel .rack-legend { font-size: 7px; letter-spacing: .02em; }
+  #liveAudioPanel .spectrum-rack, #liveAudioPanel .vu-pair, #graphicEq .eq-glass { padding: 10px 4px 5px; border-width: 3px; }
+  :is(#liveAudioPanel, #graphicEq) .rack-legend { font-size: 7px; letter-spacing: .02em; }
   #liveAudioPanel .visual-tools { gap: 12px; justify-content: space-between; }
   #liveAudioPanel .faceplate-brand { flex-basis: 100%; }
   #liveAudioPanel .peak-meters { padding: 12px 7px; }
@@ -400,6 +455,9 @@ let pollTimer = 0;
 let pollInFlight = false;
 let lastFrameAt = 0;
 let nextStatusAt = 0;
+let eqDirty = false;
+let eqSaving = false;
+const eqSliders = [];
 let lastMeterAt = -Infinity;
 let lastMeterUpdate = null;
 let lastMeterAdvanceAt = -Infinity;
@@ -769,10 +827,13 @@ function updateVisualTargets(state) {
 }
 
 function updateDashboard(state) {
+  updateEq(state);
   $('clockState').textContent = state.clock_locked ? 'I2S locked' : 'Waiting for I2S';
   $('clockState').classList.toggle('live', state.clock_locked);
   $('signal').textContent = state.signal_present ? 'Audio present' : 'Silent';
   $('clients').textContent = state.stream_clients;
+  $('sonosClients').textContent = state.sonos_stream_clients ?? '--';
+  $('otherClients').textContent = state.other_stream_clients ?? '--';
   $('overruns').textContent = state.overruns;
   $('ip').textContent = state.ip;
   $('heap').textContent = `${Math.round(state.heap_free / 1024)} KB`;
@@ -796,11 +857,16 @@ function updateDashboard(state) {
   $('version').textContent = state.version;
   $('networkState').textContent = state.wifi_connected
     ? `Connected at ${state.ip} - ${state.wifi_rssi} dBm - power save off`
-    : 'Setup access point active';
+    : state.setup_ap ? 'Setup access point active' : 'Connecting to Wi-Fi...';
+  $('wifiBssid').textContent = state.wifi_bssid || '--';
+  $('wifiChannel').textContent = state.wifi_channel || '--';
+  $('wifiReconnects').textContent = state.wifi_reconnects ?? '--';
   $('streamLink').href = state.stream_url;
-  $('sonosAuto').textContent = state.sonos_group_name
+  const sonosState = state.sonos_group_name
     ? `Automatic - ${state.sonos_group_name} - ${state.sonos_auto_state}`
     : `Automatic - ${state.sonos_auto_state}`;
+  $('sonosAuto').textContent = state.sonos_recovery_attempts == null ? sonosState
+    : `${sonosState} · Stream restart attempts: ${state.sonos_recovery_attempts}`;
   if (state.sonos_group_ip) {
     const select = $('sonosPlayer');
     let option = [...select.options].find(item => item.value === state.sonos_group_ip);
@@ -833,6 +899,32 @@ function updateDashboard(state) {
   previousStatus = {at: now, uptime: state.uptime_s,
     streamFrames: state.stream_frames, capturedFrames: state.captured_frames};
   updateVisualTargets(state);
+}
+
+function renderEqBand({slider, output, leds}, gain) {
+  slider.value = gain;
+  const value = Number(slider.value);
+  output.textContent = `${value > 0 ? '+' : ''}${value} dB`;
+  leds.forEach((led, index) => {
+    const level = 6 - index;
+    led.classList.toggle('lit', level >= Math.min(0, value) && level <= Math.max(0, value));
+    led.classList.toggle('position', level === value);
+  });
+}
+
+function updateEq(state) {
+  if (!Array.isArray(state.eq_gains) || state.eq_gains.length !== eqSliders.length) return;
+  $('eqControls').disabled = eqSaving;
+  if (!eqDirty && !eqSaving) {
+    $('eqPreset').value = state.eq_preset;
+    eqSliders.forEach((band, i) => {
+      if (Number(band.slider.value) !== state.eq_gains[i]) renderEqBand(band, state.eq_gains[i]);
+    });
+  }
+  const mode = !state.eq_applied ? 'Waiting for audio to apply EQ'
+    : state.eq_preset === 'flat' ? 'Flat bypass active'
+    : `${state.eq_preset.replaceAll('-', ' ')} active · ${state.eq_headroom_db.toFixed(1)} dB headroom`;
+  $('eqSummary').textContent = `${mode} · Clipped samples since boot: ${state.eq_clipped_samples}`;
 }
 
 function scheduleStatus(delay = document.hidden ? HIDDEN_POLL_MS : POLL_MS) {
@@ -881,6 +973,64 @@ $('wifiForm').addEventListener('submit', async event => {
   const body = new URLSearchParams(new FormData(event.currentTarget));
   const response = await fetch('/api/wifi', {method: 'POST', body});
   if (!response.ok) $('networkState').textContent = 'Unable to save Wi-Fi settings';
+});
+
+['31.5 Hz', '63 Hz', '125 Hz', '250 Hz', '500 Hz', '1 kHz', '2 kHz', '4 kHz', '8 kHz', '16 kHz']
+  .forEach((frequency, index) => {
+    const label = document.createElement('label');
+    label.className = 'eq-band';
+    label.textContent = frequency;
+    const slider = document.createElement('input');
+    slider.type = 'range';
+    slider.name = `gain${index}`;
+    slider.min = -6;
+    slider.max = 6;
+    slider.value = 0;
+    slider.setAttribute('aria-label', `${frequency} gain in dB`);
+    const track = document.createElement('span');
+    track.className = 'eq-track';
+    const ladder = document.createElement('span');
+    ladder.className = 'eq-ladder';
+    ladder.setAttribute('aria-hidden', 'true');
+    const leds = Array.from({length: 13}, () => document.createElement('i'));
+    leds[6].classList.add('zero');
+    ladder.append(...leds);
+    track.append(ladder, slider);
+    const output = document.createElement('output');
+    label.append(track, output);
+    $('eqBands').appendChild(label);
+    const band = {slider, output, leds};
+    eqSliders.push(band);
+    renderEqBand(band, 0);
+    slider.addEventListener('input', () => {
+      $('eqPreset').value = 'custom';
+      renderEqBand(band, slider.value);
+      eqDirty = true;
+    });
+  });
+$('eqPreset').addEventListener('change', () => { eqDirty = true; });
+$('eqForm').addEventListener('submit', async event => {
+  event.preventDefault();
+  if (eqSaving) return;
+  const body = new URLSearchParams(new FormData(event.currentTarget));
+  eqSaving = true;
+  $('eqControls').disabled = true;
+  const message = $('eqMessage');
+  message.hidden = false;
+  message.textContent = 'Applying EQ…';
+  try {
+    const response = await fetch('/api/eq', {method: 'POST', body,
+      signal: AbortSignal.timeout(4000)});
+    if (!response.ok) throw new Error(`EQ request failed: ${response.status}`);
+    eqDirty = false;
+    nextStatusAt = 0;
+    message.hidden = true;
+  } catch (error) {
+    message.textContent = 'Could not apply EQ. Try again.';
+  } finally {
+    eqSaving = false;
+    $('eqControls').disabled = false;
+  }
 });
 
 $('scanWifi').addEventListener('click', async () => {

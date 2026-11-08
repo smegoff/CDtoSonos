@@ -42,9 +42,10 @@ connected by a deliberately short screened four-core lead.
 - Stereo FLAC stream at `http://cdtosonos.local:8000/cd.flac`
 - Automatic Sonos discovery, saved coordinator and audio-triggered playback
 - 1.5-second audio qualification and 90-second track-gap/silence holdoff
-- Automatic reconnection while audio remains present
+- Sonos-specific stream recovery for stalls and large skips during playback
+- Ten-band graphic EQ with presets, custom settings and a true Flat bypass
 - Responsive web dashboard with spectrum analyser, analogue VU meters,
-  diagnostics, Wi-Fi setup and manual Sonos controls
+  access-point diagnostics, Wi-Fi setup and manual Sonos controls
 - OLED status display
 - SX1262 LoRa radio held in hardware reset and never used by the firmware
 - mDNS hostname `http://cdtosonos.local/`

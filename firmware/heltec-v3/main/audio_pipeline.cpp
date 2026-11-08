@@ -165,6 +165,7 @@ void AudioPipeline::capture_task() {
         if ((result == ESP_OK || result == ESP_ERR_TIMEOUT) && bytes_read > 0) {
             last_received_us = now;
         } else if (now - last_received_us >= kClockLossUs) {
+            eq_.reset_history();
             if (xSemaphoreTake(mutex_, pdMS_TO_TICKS(5)) == pdTRUE) {
                 if (metrics_.clock_locked) ++metrics_.clock_loss_events;
                 metrics_.clock_locked = false;
@@ -215,7 +216,8 @@ void AudioPipeline::capture_task() {
         accumulated_bytes = 0;
 
         // The peripheral has already extracted the 16 audio bits from each
-        // 24-bit right-justified slot. Publish unchanged: no resampling/gain.
+        // 24-bit right-justified slot. Apply EQ once for all stream listeners.
+        process_eq(raw.data());
         publish(raw.data());
     }
 
@@ -243,6 +245,36 @@ void AudioPipeline::analysis_task() {
                 (sequence % kSpectrumIntervalBlocks) == 0);
     }
     vTaskDelete(nullptr);
+}
+
+void AudioPipeline::set_eq(EqPreset preset, const EqGains& gains) {
+    const EqConfig config = EqConfig::make(preset, gains, board::kSampleRate);
+    xSemaphoreTake(mutex_, portMAX_DELAY);
+    requested_eq_ = config;
+    ++eq_revision_;
+    xSemaphoreGive(mutex_);
+}
+
+EqStatus AudioPipeline::eq_status() const {
+    xSemaphoreTake(mutex_, portMAX_DELAY);
+    const EqStatus status = {requested_eq_.preset, requested_eq_.gains,
+        requested_eq_.headroom_db, eq_revision_.load() == eq_applied_revision_.load(),
+        eq_clipped_samples_.load()};
+    xSemaphoreGive(mutex_);
+    return status;
+}
+
+void AudioPipeline::process_eq(int16_t* samples) {
+    uint32_t applied = eq_applied_revision_.load();
+    if (eq_revision_.load() != applied && xSemaphoreTake(mutex_, 0) == pdTRUE) {
+        const EqConfig config = requested_eq_;
+        applied = eq_revision_.load();
+        xSemaphoreGive(mutex_);
+        eq_.configure(config);
+    }
+    const uint32_t clipped = eq_.process(samples, board::kFlacBlockSamples);
+    if (clipped != 0) eq_clipped_samples_.fetch_add(clipped);
+    eq_applied_revision_.store(applied);
 }
 
 void AudioPipeline::publish(const int16_t* samples) {

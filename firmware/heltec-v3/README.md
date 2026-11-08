@@ -29,15 +29,38 @@ Before Wi-Fi, I2S or any service starts:
 ## Runtime behaviour
 
 - Receives native stereo, 16-bit right-justified PCM in 24-bit slots.
-- Serves a continuous, bit-perfect `audio/flac` stream on port 8000.
-- Uses lightweight fixed-predictor/Rice FLAC coding to reduce Wi-Fi traffic
-  without changing any captured PCM sample.
+- Serves continuous stereo `audio/flac` on port 8000 at 44.1 kHz and 16 bits.
+- Uses lightweight fixed-predictor/Rice FLAC coding. Flat bypass sends
+  the captured PCM unchanged; enabled EQ shapes the PCM before encoding.
 - Discovers Sonos topology after Wi-Fi connects.
 - Saves the selected coordinator UUID/IP/name in NVS.
 - Starts after 1.5 seconds of sustained audio.
 - Holds through silence for 90 seconds to cover track changes.
-- Retries Sonos playback if the stream client disconnects.
-- Never modifies Sonos grouping, bonding, surrounds, Trueplay, EQ or volume.
+- Tracks the selected Sonos coordinator separately from browser listeners.
+- Reopens a stalled or heavily skipping Sonos stream while fresh CD audio
+  is present. The dashboard counts recovery attempts.
+- Uses stream-side EQ and leaves Sonos room settings intact.
+
+### Graphic EQ and connection recovery
+
+The dashboard offers ten bands from 31.5 Hz to 16 kHz, each adjustable from
+−6 to +6 dB. Choose **Flat**, **Warm**, **Bass Boost**, **Vocal**, **Bright**,
+or **Custom**, then click **Apply EQ**. The green segments show boost or cut
+from the 0 dB centre. Flat is the power-on default. Changes crossfade over
+one PCM block, and enabled curves reserve headroom and count clipped samples.
+Sonos and local browser playback receive the same stream.
+
+The Heltec tries the strongest compatible access point for the saved network
+when connecting. The dashboard reports its BSSID, channel and reconnect count.
+Sonos recovery uses the same reopen sequence as **Play** if the selected
+player goes five seconds without a completed frame send, or skips roughly a
+second of audio within five seconds. Recovery attempts are spaced by at least
+30 seconds. These triggers measure stream delivery; audible distortion alone
+may not register as a fault.
+
+The smoked-glass EQ build was flashed and checked with **Warm** active on
+8 November 2026. In a 30-second run, 44.1 kHz capture and Sonos delivery kept
+pace with zero new overruns, clipped samples, capture losses or clock events.
 
 ## Build
 
@@ -87,9 +110,9 @@ Filter coefficients follow the constant-peak-gain bandpass in the
 This is a music display, not a standards-calibrated measurement analyser;
 constant-Q bandwidth departs from exact third-octave spacing near Nyquist.
 
-Display sensitivity affects the drawing only. No gain, EQ, filtering or
-resampling is applied to the streamed PCM. Capture priorities and buffers
-are unchanged. `analysis_dsp_us` / `analysis_dsp_max_us` measure analysis wall
+Display sensitivity affects the drawing only. The separate graphic EQ changes
+the streamed PCM when enabled; the sample rate stays at 44.1 kHz.
+`analysis_dsp_us` / `analysis_dsp_max_us` measure analysis wall
 time (including preemption), not CPU utilisation. Telemetry that stops advancing
 fades out instead of leaving frozen live-looking levels.
 
